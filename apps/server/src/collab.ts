@@ -199,7 +199,7 @@ export async function registerCollabRoute(app: FastifyInstance, collab: Collab) 
   app.get("/collab", { websocket: true }, (socket, req) => {
     // Browsers send cookies on cross-site WebSocket handshakes: only accept our own origin.
     const origin = req.headers.origin;
-    const allowed = [app.config.appUrl, `${req.protocol}://${req.host}`];
+    const allowed = [new URL(app.config.appUrl).origin, `${req.protocol}://${req.host}`];
     const token = req.cookies[SESSION_COOKIE];
     const user = token ? findSessionUser(app.db, token) : null;
     if ((origin && !allowed.includes(origin)) || !user) {

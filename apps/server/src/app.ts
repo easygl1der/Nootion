@@ -213,9 +213,10 @@ export async function buildApp(opts: { db: Db; config: Config; logger?: boolean;
       reply.header("content-security-policy", [...policy, ...(frames ? [`frame-ancestors ${frames}`] : [])].join("; "));
     }
     // CSRF: browsers always send Origin on cross-site mutations; reject those not coming from the app itself.
+    // wrise fork: APP_URL may carry a path prefix (/nootion), and Origin never does.
     if (!SAFE_METHODS.has(req.method) && req.url.startsWith("/api/") && !APP_ENDPOINTS.test(req.url.split("?")[0]!)) {
       const origin = req.headers.origin;
-      if (origin && origin !== opts.config.appUrl && origin !== `${req.protocol}://${req.host}`) {
+      if (origin && origin !== new URL(opts.config.appUrl).origin && origin !== `${req.protocol}://${req.host}`) {
         throw new HttpError(
           403,
           "bad_origin",
