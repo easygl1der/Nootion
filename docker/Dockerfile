@@ -10,6 +10,9 @@ COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 RUN pnpm install --frozen-lockfile
 COPY . .
+# wrise fork (DEM-1293): the path prefix and the AGPL source link, both read by the web build
+ARG NOOTION_BASE_PATH=/
+ARG VITE_SOURCE_URL=
 RUN pnpm build \
  && pnpm --filter @nootion/server deploy --prod --legacy /out \
  && rm -rf /out/src /out/test /out/build.mjs /out/drizzle.config.ts /out/tsconfig.json /out/dist \
