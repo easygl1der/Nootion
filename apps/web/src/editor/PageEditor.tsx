@@ -4,6 +4,7 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCaret from "@tiptap/extension-collaboration-caret";
 import { HocuspocusProvider } from "@hocuspocus/provider";
+import { BASE } from "../lib/base";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { PAGE_DB_PREFIX } from "../lib/offline";
@@ -49,7 +50,7 @@ export function colorFor(id: string): string {
 }
 
 function collabUrl(): string {
-  return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/collab`;
+  return `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}${BASE}/collab`;
 }
 
 interface Peer {

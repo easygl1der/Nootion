@@ -1,3 +1,4 @@
+import { BASE } from "../lib/base";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ export function RowMenu({
     entries.push(
       { key: "open", section: "", icon: <Maximize2 size={15} />, label: t("common.open"), run: close(() => navigate(rowHref(row))) },
       { key: "tab", icon: <ExternalLink size={15} />, label: t("page.openNewTab"), run: close(() => void window.open(rowHref(row), "_blank", "noopener")) },
-      { key: "link", section: "", icon: <Link2 size={15} />, label: t("page.copyLink"), run: close(() => copyText(`${location.origin}${rowHref(row)}`)) },
+      { key: "link", section: "", icon: <Link2 size={15} />, label: t("page.copyLink"), run: close(() => copyText(`${location.origin}${BASE}${rowHref(row)}`)) },
     );
   }
   if (editable) {

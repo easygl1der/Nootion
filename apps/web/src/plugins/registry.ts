@@ -1,3 +1,4 @@
+import { withBase } from "../lib/base";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { useQuery } from "@tanstack/react-query";
@@ -116,7 +117,7 @@ async function loadClient(p: ClientPluginInfo) {
     ui: { Modal, Button, showDialog },
   };
   try {
-    const mod = await import(/* @vite-ignore */ p.clientUrl!);
+    const mod = await import(/* @vite-ignore */ withBase(p.clientUrl!));
     const activate = mod.activate ?? mod.default;
     if (typeof activate === "function") await activate(sdk);
   } catch (e) {

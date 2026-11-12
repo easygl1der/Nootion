@@ -1,3 +1,4 @@
+import { withoutBase } from "../lib/base";
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 
@@ -30,7 +31,7 @@ export const LinkClicks = Extension.create<{ navigate: ((path: string) => void) 
             }
             if (!/^(https?|mailto|tel):$/.test(url.protocol)) return false;
             event.preventDefault();
-            if (navigate && url.origin === location.origin && !event.ctrlKey && !event.metaKey) navigate(url.pathname + url.search + url.hash);
+            if (navigate && url.origin === location.origin && !event.ctrlKey && !event.metaKey) navigate(withoutBase(url.pathname) + url.search + url.hash);
             else window.open(url.href, "_blank", "noopener,noreferrer");
             return true;
           },

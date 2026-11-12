@@ -1,3 +1,4 @@
+import { BASE } from "../lib/base";
 import { useMemo, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -96,7 +97,7 @@ export function PageMenu({
           {starred ? t("favorites.remove") : t("favorites.add")}
         </Item>
         <Separator />
-        <Item icon={<Link2 size={15} />} onClick={run(() => copyText(`${location.origin}/page/${page.id}`))}>
+        <Item icon={<Link2 size={15} />} onClick={run(() => copyText(`${location.origin}${BASE}/page/${page.id}`))}>
           {t("page.copyLink")}
         </Item>
         {editable && (

@@ -1,3 +1,5 @@
+import { mergeAttributes } from "@tiptap/core";
+import { withBase } from "../lib/base";
 import type { AnyExtension } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { TaskList } from "@tiptap/extension-list";
@@ -54,7 +56,8 @@ export function baseExtensions(opts: {
     RepeatingTaskItem.configure({ nested: true }),
     TaskRepeatExtension,
     TableKit.configure({ table: { resizable: true } }),
-    Image,
+    // wrise fork (DEM-1293): stored src is "/api/attachments/…"; prefixed before the browser loads it, not after
+    Image.extend({ renderHTML({ HTMLAttributes }) { return ["img", mergeAttributes(this.options.HTMLAttributes, { ...HTMLAttributes, src: typeof HTMLAttributes.src === "string" ? withBase(HTMLAttributes.src) : HTMLAttributes.src })]; } }),
     ImageViewer,
     Callout,
     Toggle,

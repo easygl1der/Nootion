@@ -1,3 +1,4 @@
+import { BASE } from "../lib/base";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy } from "lucide-react";
@@ -161,7 +162,7 @@ export function SsoAdmin() {
         <CopyRow
           label={t("sso.redirectUri")}
           value={
-            s?.redirectUri ?? `${window.location.origin}/api/auth/sso/callback`
+            s?.redirectUri ?? `${window.location.origin}${BASE}/api/auth/sso/callback`
           }
           help={t("sso.redirectUriHelp")}
         />

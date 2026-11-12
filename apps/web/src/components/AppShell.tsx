@@ -265,6 +265,12 @@ export function AppShell() {
             </span>
           )}
         </button>
+        {import.meta.env.VITE_SOURCE_URL && (
+          // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293); its source is offered to everyone who uses it.
+          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 py-1 text-xs text-neutral-400 hover:underline">
+            Source code (AGPL-3.0, modified)
+          </a>
+        )}
       </div>
     </>
   );

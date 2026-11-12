@@ -9,11 +9,15 @@ import { App } from "./App";
 import "./index.css";
 
 import { initTheme } from "./lib/theme";
+import { BASE, installBase } from "./lib/base";
+
+installBase();
 
 initTheme();
 
 // Makes the app installable on phones and computers (production builds only: in development, Vite serves the code).
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
+// Not under a path prefix: the worker would take the whole site's root (wrise fork, DEM-1293).
+if (import.meta.env.PROD && !BASE && "serviceWorker" in navigator) {
   window.addEventListener("load", () => void navigator.serviceWorker.register("/sw.js").catch(() => {}));
 }
 
@@ -26,7 +30,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={BASE || undefined}>
         <SessionProvider>
           <App />
         </SessionProvider>

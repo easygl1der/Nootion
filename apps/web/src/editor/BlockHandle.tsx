@@ -1,3 +1,4 @@
+import { BASE } from "../lib/base";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import { DragHandle } from "@tiptap/extension-drag-handle-react";
@@ -351,7 +352,7 @@ function BlockMenu({
         if (!stillThere(editor, block)) return onClose();
         const id = ensureBlockId(editor, block.pos);
         if (!id) return onClose();
-        void copyText(`${window.location.origin}/page/${pageId}#block-${id}`).then((ok) => {
+        void copyText(`${window.location.origin}${BASE}/page/${pageId}#block-${id}`).then((ok) => {
           if (!ok) return onClose();
           setCopied(true);
           window.setTimeout(onClose, 700);

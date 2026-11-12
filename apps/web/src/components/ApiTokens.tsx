@@ -1,3 +1,4 @@
+import { BASE } from "../lib/base";
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, KeyRound, Trash2 } from "lucide-react";
@@ -201,7 +202,7 @@ function NewToken({ token, onDone }: { token: string; onDone: () => void }) {
 
 /** How to connect an AI agent to Nootion's MCP server. */
 export function McpConnect() {
-  const url = `${window.location.origin}/mcp`;
+  const url = `${window.location.origin}${BASE}/mcp`;
   const [copied, setCopied] = useState(false);
   const command = `claude mcp add --transport http nootion ${url} --header "Authorization: Bearer nt_…"`;
   return (
