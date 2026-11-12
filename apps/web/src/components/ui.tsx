@@ -2,6 +2,7 @@ import type React from "react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 import { currentLocale, LOCALE_NAMES, LOCALES, t, type Locale } from "@nootion/shared";
+import { withBase } from "../lib/base";
 
 export function Button({ variant = "primary", className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "danger" }) {
   const styles = {
@@ -39,7 +40,7 @@ export function AuthCard({ title, subtitle, children }: { title: string; subtitl
     <div className="flex min-h-full items-center justify-center bg-neutral-50 p-4 dark:bg-neutral-950">
       <div className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mb-6 text-center">
-          <img src="/favicon.svg" alt="" className="mx-auto mb-3 h-10 w-10" />
+          <img src={withBase("/wrise-ai-logo.png")} alt="Wrise AI" className="wrise-wordmark wrise-auth-logo mx-auto mb-3" />
           <h1 className="text-xl font-semibold">{title}</h1>
           {subtitle && <p className="mt-1 text-sm text-neutral-500">{subtitle}</p>}
         </div>

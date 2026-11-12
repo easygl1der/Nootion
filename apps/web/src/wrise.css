@@ -49,9 +49,11 @@ aside[aria-label="Sidebar"] a[aria-current="page"] svg { color: #ffca4f; }
 aside[aria-label="Sidebar"] .uppercase { color: rgba(167, 184, 200, 0.75); letter-spacing: 0.06em; }
 aside[aria-label="Sidebar"] [data-wrise-source] { color: #8197ad; }
 .wrise-brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; color: #fff; text-decoration: none; }
-.wrise-brand img { width: 30px; height: 30px; border-radius: 8px; }
-.wrise-brand b { font-size: 15px; font-weight: 600; letter-spacing: 0.22em; }
-.wrise-brand small { display: block; font-size: 11px; letter-spacing: 0.02em; color: #a7b8c8; font-weight: 400; margin-top: 1px; }
+.wrise-brand img.wrise-wordmark { height: 30px; width: auto; }
+.wrise-brand img.wrise-mark { height: 34px; width: auto; }
+/* the official files are white and gold, drawn for the navy; on the light sign-in card and header they sit on a navy tile */
+.wrise-auth-logo { height: 34px; width: auto; box-sizing: content-box; background: #0b1c33; padding: 12px 18px; border-radius: 10px; }
+.wrise-menu-mark { height: 22px; width: auto; box-sizing: content-box; background: #0b1c33; padding: 4px 6px; border-radius: 6px; }
 
 /* ---- sign-in / setup card ---- */
 button[type="submit"] { background: #0b1c33 !important; color: #f6f9fd !important; border-radius: var(--radius-lg); }

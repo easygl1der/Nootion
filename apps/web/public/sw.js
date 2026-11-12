@@ -113,7 +113,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(data.title || "Nootion", {
       body: data.body || "",
       tag: data.tag,
-      icon: "/icon-192.png",
+      icon: new URL("icon-192.png", self.location).href,
       data: { url: data.url || "/" },
     }),
   );

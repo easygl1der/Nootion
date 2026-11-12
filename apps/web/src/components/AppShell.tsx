@@ -60,13 +60,23 @@ import {
   QuickCaptureDialog,
   useCaptureShortcut,
 } from "./QuickCapture";
-import { MobileBar, SidebarLayout } from "./SidebarLayout";
+import { MobileBar, SidebarLayout, useSidebarCollapsed } from "./SidebarLayout";
+import { withBase } from "../lib/base";
 import { useIsTouch } from "../lib/mobile";
 import { clearOfflineData } from "../lib/offline";
 import { SyncStatus } from "./SyncStatus";
 import { useLiveEvents } from "../lib/live";
 import { pageIcon } from "../lib/icons";
 import { syncErrorText, useDesktopSync } from "../pages/SyncPage";
+
+// Official Wrise files (apps/web/public): the wordmark, and the mark when the sidebar is put away.
+function BrandImage() {
+  return useSidebarCollapsed() ? (
+    <img src={withBase("/wrise-ai-icon.png")} alt="Wrise AI" className="wrise-mark" />
+  ) : (
+    <img src={withBase("/wrise-ai-logo.png")} alt="Wrise AI" className="wrise-wordmark" />
+  );
+}
 
 export function AppShell() {
   const { user, refresh } = useSession();
@@ -126,11 +136,7 @@ export function AppShell() {
   const sidebar = (
     <>
       <Link to="/" className="wrise-brand" data-wrise-brand>
-        <img src="/favicon.svg" alt="" />
-        <span>
-          <b>WRISE</b>
-          <small>Workspace</small>
-        </span>
+        <BrandImage />
       </Link>
       <Link
         to="/account"

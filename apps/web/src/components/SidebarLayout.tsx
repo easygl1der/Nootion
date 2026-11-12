@@ -12,6 +12,7 @@ import { useLocation } from "react-router-dom";
 import { ChevronsLeft, ChevronsRight, Menu } from "lucide-react";
 import { isMac } from "./QuickCapture";
 import { t } from "@nootion/shared";
+import { withBase } from "../lib/base";
 
 interface SidebarState {
   /** Opens the drawer on phones. */
@@ -257,6 +258,8 @@ export function SidebarLayout({
   );
 }
 
+export const useSidebarCollapsed = () => useContext(SidebarContext)?.collapsed ?? false;
+
 /** Opens the sidebar: the drawer on phones; on wide screens, shown only when the sidebar is put away. */
 export function MenuButton({ className = "" }: { className?: string }) {
   const ctx = useContext(SidebarContext);
@@ -274,7 +277,14 @@ export function MenuButton({ className = "" }: { className?: string }) {
       data-menu-button
       className={`-ml-1 rounded-md p-2 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 ${ctx.collapsed ? "" : "md:hidden"} ${className}`}
     >
-      <Menu size={20} />
+      {ctx.collapsed ? (
+        <>
+          <img src={withBase("/wrise-ai-icon.png")} alt="" className="wrise-menu-mark hidden md:block" />
+          <Menu size={20} className="md:hidden" />
+        </>
+      ) : (
+        <Menu size={20} />
+      )}
     </button>
   );
 }
