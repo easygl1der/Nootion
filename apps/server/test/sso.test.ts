@@ -461,3 +461,28 @@ describe("SCIM", () => {
     expect((await boris.get("/api/auth/me")).statusCode).toBe(200);
   });
 });
+
+// wrise fork (DEM-1337): behind a proxy that strips "/nootion", the browser's paths carry it.
+describe("SSO under a path prefix", () => {
+  it("scopes the state cookie and both redirects to the prefix", async () => {
+    const prefixed = await makeApp(undefined, { APP_URL: "http://localhost:3000/nootion" });
+    try {
+      const admin = await setupAdmin(prefixed);
+      await admin.put("/api/admin/sso", settings());
+      const start = await prefixed.inject({ method: "GET", url: "/api/auth/sso/start?next=/page/abc" });
+      const state = start.cookies.find((c) => c.name === "nootion_sso")!;
+      expect(state.path).toBe("/nootion/api/auth/sso");
+      const ok = await prefixed.inject({
+        method: "GET",
+        url: `/api/auth/sso/callback?${idp.authorize(start.headers.location as string, { sub: "sub-p", email: "boris@example.com" })}`,
+        headers: { cookie: `nootion_sso=${state.value}` },
+      });
+      expect(ok.headers.location).toBe("/nootion/page/abc");
+      expect(ok.cookies.find((c) => c.name === "nootion_session")?.path).toBe("/");
+      const failed = await prefixed.inject({ method: "GET", url: "/api/auth/sso/callback?error=access_denied" });
+      expect(failed.headers.location).toBe("/nootion/login?sso_error=denied");
+    } finally {
+      await prefixed.close();
+    }
+  });
+});

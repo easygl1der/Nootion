@@ -50,8 +50,10 @@ export const ssoAdminRoutes: FastifyPluginAsync = async (app) => {
 export const ssoLoginRoutes: FastifyPluginAsync = async (app) => {
   const { db, sso } = app;
   const secure = app.config.appUrl.startsWith("https://");
+  // wrise fork (DEM-1337): APP_URL may carry a path prefix ("/nootion") that the proxy in front strips, so the paths the browser sees need it back.
+  const base = new URL(app.config.appUrl).pathname.replace(/\/+$/, "");
   const back = (reply: FastifyReply, error: string) =>
-    reply.redirect(`/login?sso_error=${error}`);
+    reply.redirect(`${base}/login?sso_error=${error}`);
 
   app.get<{ Querystring: { next?: string; invite?: string } }>(
     "/start",
@@ -67,7 +69,7 @@ export const ssoLoginRoutes: FastifyPluginAsync = async (app) => {
         STATE_COOKIE,
         JSON.stringify({ state, nonce, verifier, next, invite }),
         {
-          path: STATE_PATH,
+          path: base + STATE_PATH,
           httpOnly: true,
           sameSite: "lax",
           secure,
@@ -84,7 +86,7 @@ export const ssoLoginRoutes: FastifyPluginAsync = async (app) => {
     { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
     async (req, reply) => {
       const raw = req.cookies[STATE_COOKIE];
-      reply.clearCookie(STATE_COOKIE, { path: STATE_PATH });
+      reply.clearCookie(STATE_COOKIE, { path: base + STATE_PATH });
       const unsigned = raw ? req.unsignCookie(raw) : null;
       let saved: {
         state: string;
@@ -112,7 +114,7 @@ export const ssoLoginRoutes: FastifyPluginAsync = async (app) => {
       const found = await account(who, saved.invite, requestLocale(req));
       if (typeof found === "string") return back(reply, found);
       startSession(app, reply, found.id, sso.config()!.sessionHours * 3600_000);
-      return reply.redirect(saved.next);
+      return reply.redirect(base + saved.next);
     },
   );
 
