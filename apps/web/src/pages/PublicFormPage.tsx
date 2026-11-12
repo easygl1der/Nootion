@@ -22,10 +22,10 @@ export function PublicFormPage() {
   const [sent, setSent] = useState(0);
   const [done, setDone] = useState(false);
 
-  if (form.isLoading) return <AuthCard title="Nootion">{t("common.loading")}</AuthCard>;
+  if (form.isLoading) return <AuthCard title="Wrise">{t("common.loading")}</AuthCard>;
   if (!form.data) {
     return (
-      <AuthCard title="Nootion">
+      <AuthCard title="Wrise">
         <p className="text-sm text-neutral-600 dark:text-neutral-400">{t("publicForm.notFound")}</p>
       </AuthCard>
     );

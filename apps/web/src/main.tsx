@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "./lib/session";
 import { App } from "./App";
 import "./index.css";
+// wrise fork (DEM-1332): Wrise look (colours, font, radii, sidebar), CSS variables only.
+import "./wrise.css";
 
 import { initTheme } from "./lib/theme";
 import { BASE, installBase } from "./lib/base";

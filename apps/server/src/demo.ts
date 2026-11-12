@@ -144,7 +144,7 @@ export function createDemo(db: Db, dataDir: string, userId: string): string {
       ...base,
       id: demoId,
       parentId: null,
-      title: L("Découvrir Nootion", "Discover Nootion"),
+      title: L("Découvrir Wrise", "Discover Wrise"),
       icon: "✨",
       position: nextPosition(tx as unknown as Db, ws.id, null),
     });
@@ -294,8 +294,8 @@ export function createDemo(db: Db, dataDir: string, userId: string): string {
           p(
             text(L("Bienvenue ! ", "Welcome! "), "bold"),
             L(
-              "Cette page montre ce que Nootion sait faire, avec des données inventées. Modifiez-la, cassez-la, puis supprimez-la quand vous voulez : clic droit dessus dans la barre latérale, puis « Mettre à la corbeille ».",
-              "This page shows what Nootion can do, with made-up data. Change it, break it, then delete it whenever you like: right-click it in the sidebar, then “Move to trash”.",
+              "Cette page montre ce que Wrise sait faire, avec des données inventées. Modifiez-la, cassez-la, puis supprimez-la quand vous voulez : clic droit dessus dans la barre latérale, puis « Mettre à la corbeille ».",
+              "This page shows what Wrise can do, with made-up data. Change it, break it, then delete it whenever you like: right-click it in the sidebar, then “Move to trash”.",
             ),
           ),
         ),
@@ -364,7 +364,7 @@ export function createDemo(db: Db, dataDir: string, userId: string): string {
         {
           type: "codeBlock",
           attrs: { language: "javascript" },
-          content: [text('function greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Nootion"));')],
+          content: [text('function greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("Wrise"));')],
         },
         columns(
           [

@@ -66,7 +66,7 @@ export function useReminderNotifications() {
     void (async () => {
       const reg = await navigator.serviceWorker?.getRegistration();
       for (const r of fresh) {
-        const title = `${r.pageIcon ? `${r.pageIcon} ` : ""}${r.pageTitle || "Nootion"}`;
+        const title = `${r.pageIcon ? `${r.pageIcon} ` : ""}${r.pageTitle || "Wrise"}`;
         const options = { body: r.text || formatMentionDate(r.date), tag: r.id, data: { url: `/page/${r.pageId}` } };
         if (reg) await reg.showNotification(title, options);
         else new Notification(title, options).onclick = () => window.open(`/page/${r.pageId}`, "_self");

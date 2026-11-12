@@ -1,13 +1,13 @@
 {
-  "name": "Nootion",
-  "short_name": "Nootion",
+  "name": "Wrise Workspace",
+  "short_name": "Wrise",
   "description": "Notes, pages and databases on your own server.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "theme_color": "#0b1c33",
   "icons": [
     {
       "src": "/icon-192.png",

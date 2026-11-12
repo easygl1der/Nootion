@@ -112,7 +112,7 @@ export function MailAdmin() {
         </fieldset>
         {field(
           t("mail.from"),
-          <input className={input} required value={form.from} placeholder="Nootion <nootion@example.com>" onChange={(e) => set({ from: e.target.value })} />,
+          <input className={input} required value={form.from} placeholder="Wrise <workspace@example.com>" onChange={(e) => set({ from: e.target.value })} />,
           t("mail.fromHelp"),
         )}
         {form.provider === "smtp" ? (

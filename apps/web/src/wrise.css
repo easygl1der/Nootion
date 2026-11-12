@@ -1,0 +1,64 @@
+/* wrise fork (DEM-1332): the Wrise look. Tokens from the Wrise portal (apps/portal/app/global.css: navy #0b1c33, gold #f0b85a, Inter, radius 0.6875rem).
+   Nootion is Tailwind v4: every colour and radius is a CSS variable, so overriding the variables restyles the whole app. Inter: SIL OFL 1.1 (assets/inter-OFL.txt). */
+@font-face { font-family: "Inter"; src: url("./assets/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  /* neutral scale -> Wrise blue-grey (portal: foreground #122033, muted #64748b, border #e6ebf2, accent #eef3f9, background #f6f9fd) */
+  --color-neutral-50: #f6f9fd;
+  --color-neutral-100: #eef3f9;
+  --color-neutral-200: #e6ebf2;
+  --color-neutral-300: #cdd6e2;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #2b3b52;
+  --color-neutral-800: #122033;
+  --color-neutral-900: #0b1c33;
+  --color-neutral-950: #07101d;
+  /* blues (links, primary buttons, focus) -> navy / steel */
+  --color-blue-50: #eef3f9; --color-blue-100: #dbe7f3; --color-blue-200: #bcd0e6; --color-blue-300: #8fb0d3; --color-blue-400: #5d88b8;
+  --color-blue-500: #2f6197; --color-blue-600: #1e4a7a; --color-blue-700: #17395f; --color-blue-800: #112c4a; --color-blue-900: #0b1c33;
+  /* ambers (highlights, warnings) -> Wrise gold */
+  --color-amber-100: #fdf1d9; --color-amber-200: #fae3b4; --color-amber-300: #f6cf86; --color-amber-400: #f3c46f; --color-amber-500: #f0b85a; --color-amber-600: #cf9533;
+  /* radii: portal --radius-lg 0.6875rem */
+  --radius-xs: 0.25rem; --radius-sm: 0.375rem; --radius-md: 0.5rem; --radius-lg: 0.6875rem; --radius-xl: 0.9rem; --radius-2xl: 1.1rem;
+  --wrise-navy: #0b1c33; --wrise-gold: #f0b85a;
+}
+.dark {
+  --color-neutral-50: #0e2438; --color-neutral-100: #122a40; --color-neutral-200: #16283b; --color-neutral-300: #2b4a68; --color-neutral-400: #8197ad;
+  --color-neutral-500: #a7b8c8; --color-neutral-600: #c7d5e3; --color-neutral-700: #dbe5ef; --color-neutral-800: #16283b; --color-neutral-900: #071528; --color-neutral-950: #071528;
+}
+html, body { font-family: var(--font-sans); background: #fff; color: #122033; }
+.dark body { background: #071528; color: #f6f9fd; }
+::selection { background: rgba(240, 184, 90, 0.35); }
+:focus-visible { outline-color: #f0b85a; }
+
+/* ---- sidebar: the portal's navy sidebar (global.css .portal-themed) ---- */
+aside[aria-label="Sidebar"] {
+  --color-neutral-50: #07192b; --color-neutral-100: #0e2438; --color-neutral-200: #274766; --color-neutral-300: rgba(255, 255, 255, 0.18); --color-neutral-400: #8197ad;
+  --color-neutral-500: #a7b8c8; --color-neutral-600: #c7d5e3; --color-neutral-700: #dbe5ef; --color-neutral-800: #16283b; --color-neutral-900: #ffffff; --color-neutral-950: #07192b;
+  background: linear-gradient(180deg, #08243b 0%, #061d32 52%, #07192b 100%) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #c7d5e3;
+}
+aside[aria-label="Sidebar"] a[aria-current="page"] {
+  color: #fff; background: linear-gradient(90deg, rgba(39, 91, 147, 0.9), rgba(30, 70, 115, 0.72)) !important; box-shadow: inset 3px 0 #f6bf3e;
+}
+aside[aria-label="Sidebar"] a[aria-current="page"] svg { color: #ffca4f; }
+aside[aria-label="Sidebar"] .uppercase { color: rgba(167, 184, 200, 0.75); letter-spacing: 0.06em; }
+aside[aria-label="Sidebar"] [data-wrise-source] { color: #8197ad; }
+.wrise-brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; color: #fff; text-decoration: none; }
+.wrise-brand img { width: 30px; height: 30px; border-radius: 8px; }
+.wrise-brand b { font-size: 15px; font-weight: 600; letter-spacing: 0.22em; }
+.wrise-brand small { display: block; font-size: 11px; letter-spacing: 0.02em; color: #a7b8c8; font-weight: 400; margin-top: 1px; }
+
+/* ---- sign-in / setup card ---- */
+button[type="submit"] { background: #0b1c33 !important; color: #f6f9fd !important; border-radius: var(--radius-lg); }
+button[type="submit"]:hover { background: #17395f !important; }
+input:focus { border-color: #f0b85a !important; box-shadow: 0 0 0 3px rgba(240, 184, 90, 0.25) !important; outline: none; }
+
+/* ---- page + database ---- */
+h1 { letter-spacing: -0.01em; }
+table th { background: #f6f9fd; }
+

@@ -9,7 +9,7 @@ import { findTokenUser, type TokenScope } from "./api-tokens.js";
 
 const VERSION = "1.2.0";
 
-const INSTRUCTIONS = `Nootion is a self-hosted notes and databases app, like Notion. Content is organised in spaces; a space holds a tree of pages.
+const INSTRUCTIONS = `Wrise Workspace (based on Nootion) is a self-hosted notes and databases app, like Notion. Content is organised in spaces; a space holds a tree of pages.
 A page can be a plain page, a database (a table whose rows are pages with cell values) or a database row.
 Find things with search or list_pages, read pages as Markdown with read_page, and query databases with query_database.
 Columns and select options are named by their names. Changes show at once to people who have the page open, and each version you write is kept in the page's history, marked with your name.

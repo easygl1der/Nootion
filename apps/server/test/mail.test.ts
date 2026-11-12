@@ -32,7 +32,7 @@ describe("e-mail", () => {
 
     const test = await boris.post("/api/admin/mail/test", {});
     expect(test.json()).toMatchObject({ ok: true, to: "boris@example.com" });
-    expect(mails[0]).toMatchObject({ from: SMTP.from, to: "boris@example.com", subject: "Nootion : e-mail de test" });
+    expect(mails[0]).toMatchObject({ from: SMTP.from, to: "boris@example.com", subject: "Wrise : e-mail de test" });
     expect(mails[0]!.html).toContain("http://localhost:3000");
     expect((await app.inject({ method: "GET", url: "/api/setup" })).json().mail).toBe(true);
   });
@@ -62,7 +62,7 @@ describe("e-mail", () => {
     await boris.put("/api/admin/mail", SMTP);
     const sent = (await boris.post("/api/admin/invitations", { role: "member", email: "carol@example.com" })).json();
     expect(sent.emailed).toBe(true);
-    expect(mails[0]).toMatchObject({ to: "carol@example.com", subject: "Boris vous invite sur Nootion" });
+    expect(mails[0]).toMatchObject({ to: "carol@example.com", subject: "Boris vous invite sur Wrise" });
     expect(mails[0]!.text).toContain(sent.url);
   });
 
@@ -72,7 +72,7 @@ describe("e-mail", () => {
     expect((await anon.post("/api/auth/forgot", { email: "nobody@example.com" })).json()).toEqual({ ok: true });
     expect(mails).toHaveLength(0);
     await anon.post("/api/auth/forgot", { email: "alice@example.com" });
-    expect(mails[0]).toMatchObject({ to: "alice@example.com", subject: "Reset your Nootion password" });
+    expect(mails[0]).toMatchObject({ to: "alice@example.com", subject: "Reset your Wrise password" });
     const token = /\/reset\/([\w-]+)/.exec(mails[0]!.text)![1]!;
     expect((await anon.get(`/api/auth/reset/${token}`)).json()).toEqual({ email: "alice@example.com" });
     expect((await anon.post("/api/auth/reset", { token, password: "short" })).statusCode).toBe(400);

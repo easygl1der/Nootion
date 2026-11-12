@@ -190,7 +190,7 @@ export function createNotifier(
         if (now.getTime() - r.remindAt.getTime() > TOO_LATE || !atLeast(getPageRole(db, r.userId, r.pageId), "viewer")) continue;
         await push(
           r.userId,
-          { title: `${icon ? `${icon} ` : ""}${title || "Nootion"}`, body: r.text || r.date.replace("T", " "), url: `/page/${r.pageId}`, tag: r.id },
+          { title: `${icon ? `${icon} ` : ""}${title || "Wrise"}`, body: r.text || r.date.replace("T", " "), url: `/page/${r.pageId}`, tag: r.id },
           "reminders",
         );
       }

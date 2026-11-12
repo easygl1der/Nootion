@@ -10,7 +10,7 @@ describe("demo page", () => {
     const ws = await boris.personalWorkspace();
     const tree = (await boris.get(`/api/workspaces/${ws}/pages`)).json().pages as { id: string; title: string; parentId: string | null; kind: string }[];
     const roots = tree.filter((p) => !p.parentId);
-    expect(roots.map((p) => p.title)).toEqual(["Découvrir Nootion"]);
+    expect(roots.map((p) => p.title)).toEqual(["Découvrir Wrise"]);
     const demo = roots[0]!.id;
 
     const content = (await boris.get(`/api/pages/${demo}/content`)).json().content as { content: { type: string; attrs?: Record<string, unknown> }[] };

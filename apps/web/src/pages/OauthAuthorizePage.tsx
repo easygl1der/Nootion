@@ -49,10 +49,10 @@ export function OauthAuthorizePage() {
     if (known && !valid) sendBack(redirectUri, "invalid_request", state);
   }, [known, valid, redirectUri, state]);
 
-  if (client.isLoading) return <AuthCard title="Nootion">{t("common.loading")}</AuthCard>;
+  if (client.isLoading) return <AuthCard title="Wrise">{t("common.loading")}</AuthCard>;
   if (!client.data) {
     return (
-      <AuthCard title="Nootion">
+      <AuthCard title="Wrise">
         <p className="text-sm text-neutral-600 dark:text-neutral-400" data-oauth-invalid>
           {t("oauth.invalid")}
         </p>

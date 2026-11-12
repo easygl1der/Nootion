@@ -49,7 +49,6 @@ import {
 } from "../lib/queries";
 import { useSession } from "../lib/session";
 import { useUpdateStatus, useVersion } from "./UpdateNotice";
-import { WhatsNewDialog } from "./WhatsNew";
 import { buildTree, pageTitle } from "../lib/tree";
 import { DRAG_TYPE, PageTree } from "./PageTree";
 import { Avatar } from "./Avatar";
@@ -126,6 +125,13 @@ export function AppShell() {
 
   const sidebar = (
     <>
+      <Link to="/" className="wrise-brand" data-wrise-brand>
+        <img src="/favicon.svg" alt="" />
+        <span>
+          <b>WRISE</b>
+          <small>Workspace</small>
+        </span>
+      </Link>
       <Link
         to="/account"
         title={t("account.title")}
@@ -267,8 +273,8 @@ export function AppShell() {
         </button>
         {import.meta.env.VITE_SOURCE_URL && (
           // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293); its source is offered to everyone who uses it.
-          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 py-1 text-xs text-neutral-400 hover:underline">
-            Source code (AGPL-3.0, modified)
+          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 py-1 text-xs text-neutral-400 hover:underline" data-wrise-source>
+            Based on Nootion · Source code (AGPL-3.0, modified)
           </a>
         )}
       </div>
@@ -294,7 +300,6 @@ export function AppShell() {
         <CreateWorkspaceDialog onClose={() => setCreatingWorkspace(false)} />
       )}
       {searching && <SearchDialog onClose={() => setSearching(false)} />}
-      <WhatsNewDialog />
       {capturing && <QuickCaptureDialog onClose={() => setCapturing(false)} />}
     </SidebarLayout>
   );
