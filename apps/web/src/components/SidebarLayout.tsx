@@ -9,10 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { ChevronsLeft, ChevronsRight, Menu } from "lucide-react";
+import { PanelLeft } from "lucide-react";
 import { isMac } from "./QuickCapture";
 import { t } from "@nootion/shared";
-import { withBase } from "../lib/base";
 
 interface SidebarState {
   /** Opens the drawer on phones. */
@@ -216,19 +215,6 @@ export function SidebarLayout({
           onMouseLeave={collapsed ? () => peek(false) : undefined}
           className={`group/sidebar fixed top-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col overflow-y-auto border-r pb-[env(safe-area-inset-bottom)] md:h-auto md:overflow-visible md:pb-0 border-neutral-200 bg-neutral-50 transition-transform duration-200 md:w-(--sidebar-w) dark:border-neutral-800 dark:bg-neutral-950 ${open ? "translate-x-0 shadow-2xl" : "-translate-x-full"} ${desktop}`}
         >
-          <button
-            onClick={toggle}
-            title={`${collapsed ? t("sidebar.dock") : t("sidebar.collapse")} (${isMac() ? "⌘" : "Ctrl+"}\\)`}
-            aria-label={collapsed ? t("sidebar.dock") : t("sidebar.collapse")}
-            data-sidebar-toggle
-            className="absolute top-3 right-2 z-10 hidden rounded-md bg-neutral-50 p-1 text-neutral-500 opacity-0 transition-opacity group-hover/sidebar:opacity-100 hover:bg-neutral-200 focus-visible:opacity-100 md:block dark:bg-neutral-950 dark:hover:bg-neutral-800"
-          >
-            {collapsed ? (
-              <ChevronsRight size={18} />
-            ) : (
-              <ChevronsLeft size={18} />
-            )}
-          </button>
           {sidebar}
           {/* The edge, to resize or put away (wide screens). */}
           <div
@@ -265,6 +251,7 @@ export function MenuButton({ className = "" }: { className?: string }) {
   const ctx = useContext(SidebarContext);
   if (!ctx) return null;
   return (
+    <>
     <button
       onClick={() =>
         window.matchMedia?.("(min-width: 768px)").matches
@@ -273,29 +260,24 @@ export function MenuButton({ className = "" }: { className?: string }) {
       }
       onMouseEnter={() => ctx.collapsed && ctx.peek(true)}
       onMouseLeave={() => ctx.collapsed && ctx.peek(false)}
-      aria-label={t("sidebar.open")}
+      aria-label="Toggle Sidebar"
       data-menu-button
-      className={`-ml-1 rounded-md p-2 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 ${ctx.collapsed ? "" : "md:hidden"} ${className}`}
+      title={`Toggle Sidebar (${isMac() ? "⌘" : "Ctrl+"}\\)`}
+      className={`flex size-7 shrink-0 items-center justify-center rounded-md text-[#122033] hover:bg-[#eef3f9] dark:text-[#f6f9fd] dark:hover:bg-[#16283b] ${className}`}
     >
-      {ctx.collapsed ? (
-        <>
-          <img src={withBase("/wrise-ai-icon.png")} alt="" className="wrise-menu-mark hidden md:block" />
-          <Menu size={20} className="md:hidden" />
-        </>
-      ) : (
-        <Menu size={20} />
-      )}
+      <PanelLeft size={16} aria-hidden />
     </button>
+    <span className="mx-2 h-4 w-px shrink-0 bg-[#e6ebf2] dark:bg-white/15" aria-hidden />
+    </>
   );
 }
 
 /** Top bar of the pages that have no header of their own, shown on phones. */
 export function MobileBar({ children }: { children?: ReactNode }) {
-  // Also on wide screens while the sidebar is put away, for its menu button.
-  const collapsed = useContext(SidebarContext)?.collapsed;
+  // On every width, like the Wrise header: the sidebar button sits top-left.
   return (
     <header
-      className={`sticky top-0 z-30 flex items-center gap-1 border-b border-neutral-200 bg-white/95 px-3 py-1.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 ${collapsed ? "md:border-b-0" : "md:hidden"}`}
+      className={`sticky top-0 z-30 flex items-center gap-1 border-b border-neutral-200 bg-white/95 px-3 py-1.5 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 `}
     >
       <MenuButton />
       <span className="flex-1" />

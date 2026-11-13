@@ -64,3 +64,7 @@ input:focus { border-color: #f0b85a !important; box-shadow: 0 0 0 3px rgba(240, 
 h1 { letter-spacing: -0.01em; }
 table th { background: #f6f9fd; }
 
+
+/* the five tabs: the Wrise rail marks the active tab by its background only (no gold stripe) */
+aside[aria-label="Sidebar"] .wrise-tabs a[aria-current="page"] { box-shadow: none; }
+aside[aria-label="Sidebar"] .wrise-tabs a[aria-current="page"] svg { color: inherit; }

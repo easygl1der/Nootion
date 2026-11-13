@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Link,
   NavLink,
@@ -24,6 +25,7 @@ import {
   Database,
   FileText,
   Calendar,
+  ChevronsUpDown,
   Home,
   Mail,
   MessageCircle,
@@ -46,7 +48,6 @@ import { useSession } from "../lib/session";
 import { useUpdateStatus, useVersion } from "./UpdateNotice";
 import { buildTree, pageTitle } from "../lib/tree";
 import { DRAG_TYPE, PageTree } from "./PageTree";
-import { Avatar } from "./Avatar";
 import { Button, CancelButton, ErrorText, Field, Modal } from "./ui";
 import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
@@ -64,11 +65,115 @@ import { pageIcon } from "../lib/icons";
 import { syncErrorText, useDesktopSync } from "../pages/SyncPage";
 
 // Official Wrise files (apps/web/public): the wordmark, and the mark when the sidebar is put away.
-function BrandImage() {
-  return useSidebarCollapsed() ? (
-    <img src={withBase("/wrise-ai-icon.png")} alt="Wrise AI" className="wrise-mark" />
-  ) : (
-    <img src={withBase("/wrise-ai-logo.png")} alt="Wrise AI" className="wrise-wordmark" />
+// The Wrise rail's brand row (portal: sidebar-logo.tsx in SidebarHeader): the official logo, "v<version>" under it.
+function BrandImage({ version }: { version: string | null }) {
+  const collapsed = useSidebarCollapsed();
+  return (
+    <span className="flex flex-col items-start gap-1.5">
+      <img src={withBase(collapsed ? "/wrise-ai-icon.png" : "/wrise-ai-logo.png")} alt="Wrise AI" className="h-8 w-auto" />
+      {version && !collapsed && (
+        <span className="pl-0.5 text-[11px] leading-none text-[#c7d5e3]/60" title={t("admin.version", { version })} data-version>
+          v{version}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// The rail's Search box (portal: search-or-ask.tsx).
+function SearchBox({ onClick }: { onClick: () => void }) {
+  const touch = useIsTouch();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t("search.button")}
+      data-testid="search-or-ask"
+      className="mx-2 flex h-8 items-center gap-2 rounded-md bg-white/[0.08] px-2 text-sm text-[#c7d5e3]/70 outline-none transition-colors duration-150 hover:text-[#c7d5e3] focus-visible:ring-2 focus-visible:ring-[#f0b85a]"
+    >
+      <Search size={16} className="shrink-0" aria-hidden />
+      <span className="truncate">{t("search.button")}</span>
+      {!touch && (
+        <kbd className="ml-auto font-sans text-xs text-[#c7d5e3]/60">{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}</kbd>
+      )}
+    </button>
+  );
+}
+
+const MENU_ITEM = "flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-[#122033] outline-none hover:bg-[#eef3f9] focus-visible:bg-[#eef3f9] dark:text-[#f6f9fd] dark:hover:bg-[#16283b] dark:focus-visible:bg-[#16283b]";
+
+// The rail's account block (portal: nav-user.tsx): avatar, name, role, chevron; the chevron opens the account menu.
+function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, syncError }: {
+  onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
+}) {
+  const { user } = useSession();
+  const [open, setOpen] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<React.CSSProperties>({});
+  const navigate = useNavigate();
+  useLayoutEffect(() => {
+    if (!open || !btn.current) return;
+    const r = btn.current.getBoundingClientRect();
+    // beside the rail on wide screens, above the block on phones (the Wrise menu: side right / bottom, align end)
+    setPos(window.matchMedia("(min-width: 768px)").matches
+      ? { left: r.right + 4, bottom: Math.max(8, window.innerHeight - r.bottom) }
+      : { left: Math.max(8, Math.min(r.left, window.innerWidth - 296)), bottom: window.innerHeight - r.top + 4 });
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const down = (e: MouseEvent) => { const el = e.target as Element; if (!el.closest("[data-user-menu]") && !btn.current?.contains(el)) setOpen(false); };
+    window.addEventListener("keydown", key); window.addEventListener("mousedown", down);
+    return () => { window.removeEventListener("keydown", key); window.removeEventListener("mousedown", down); };
+  }, [open]);
+  const name = user?.name ?? "";
+  const role = (user?.role ?? "").replace(/^./, (c) => c.toUpperCase());
+  const go = (to: string) => { setOpen(false); navigate(to); };
+  const face = (size: string) => (
+    user?.avatarUrl
+      ? <img src={user.avatarUrl} alt="" className={`${size} shrink-0 rounded-lg object-cover`} />
+      : <span className={`${size} flex shrink-0 items-center justify-center rounded-lg bg-[#f6f9fd] text-xs font-medium text-[#122033]`}>
+          {name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?"}
+        </span>
+  );
+  return (
+    <>
+      <button ref={btn} type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={name} data-testid="nav-user"
+        className={`flex h-12 w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-[#f0b85a] ${open ? "bg-white/[0.08]" : ""}`}>
+        {face("size-8")}
+        <span className="grid min-w-0 flex-1 text-left leading-tight">
+          <span className="truncate font-medium">{name}</span>
+          <span className="truncate text-xs text-[#c7d5e3]/70">{role}</span>
+        </span>
+        <ChevronsUpDown size={16} className="ml-auto shrink-0" aria-hidden />
+        {(updateWarning || syncError) && <span className="sr-only">!</span>}
+      </button>
+      {open && createPortal(
+        <div role="menu" data-user-menu style={{ position: "fixed", zIndex: 70, ...pos }}
+          className="min-w-72 max-w-[calc(100vw-16px)] rounded-lg bg-white p-1 text-[#122033] shadow-lg ring-1 ring-[#122033]/10 dark:bg-[#0b1c33] dark:text-[#f6f9fd] dark:ring-white/10">
+          <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+            {face("size-8")}
+            <div className="grid flex-1 leading-tight"><span className="truncate font-medium">{name}</span><span className="truncate text-xs text-[#64748b]">{role}</span></div>
+          </div>
+          <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
+          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/account")}><User size={16} /> {t("account.title")}</button>
+          {admin && (
+            <button role="menuitem" className={MENU_ITEM} onClick={() => go("/admin")}>
+              <Settings size={16} /> {t("admin.title")}
+              {updateWarning && <span className="ml-auto text-amber-500" title={updateText} data-update-warning><AlertTriangle size={14} aria-label={updateText} /></span>}
+            </button>
+          )}
+          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/trash")}><Trash2 size={16} /> {t("trash.title")}</button>
+          {syncLinks && (
+            <button role="menuitem" className={MENU_ITEM} onClick={() => go("/sync")}>
+              <RefreshCw size={16} /> {t("sync.title")}
+              {syncError && <span className="ml-auto text-amber-500" title={syncErrorText(syncError)} data-sync-warning><AlertTriangle size={14} aria-label={syncErrorText(syncError)} /></span>}
+            </button>
+          )}
+          <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
+          <button role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); onLogout(); }}><LogOut size={16} /> {t("auth.logout")}</button>
+        </div>, document.body)}
+    </>
   );
 }
 
@@ -110,7 +215,6 @@ export function AppShell() {
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [searching, setSearching] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const touch = useIsTouch();
   // Pages have their own header, with the menu button.
   // Pages (and the home page) have their own header with the menu button.
   const onPageRoute = useMatch("/page/:id");
@@ -144,36 +248,17 @@ export function AppShell() {
   const syncLinks = useDesktopSync().data;
   const syncError = syncLinks?.find((l) => l.lastError)?.lastError;
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${isActive ? "bg-neutral-200/70 font-medium dark:bg-neutral-800" : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60"}`;
-
   const sidebar = (
     <>
-      <Link to="/" className="wrise-brand" data-wrise-brand>
-        <BrandImage />
-      </Link>
-      <Link
-        to="/account"
-        title={t("account.title")}
-        className="m-2 flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60"
-      >
-        <Avatar name={user?.name ?? ""} url={user?.avatarUrl} size={26} />
-        <span className="truncate text-sm font-semibold">{user?.name}</span>
-      </Link>
-      <SyncStatus className="mx-3 mb-2 w-fit" />
-      <button
-        onClick={() => setSearching(true)}
-        className="mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-600 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:bg-neutral-800/60"
-      >
-        <Search size={16} /> {t("search.button")}
-        {!touch && (
-          <kbd className="ml-auto rounded border border-neutral-300 px-1 font-sans text-[10px] text-neutral-400 dark:border-neutral-700">
-            {/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}
-          </kbd>
-        )}
-      </button>
+      <div className="flex flex-col gap-2 p-2">
+        <Link to="/" className="flex h-auto w-full rounded-md p-1.5 text-left outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#f0b85a]" data-wrise-brand>
+          <BrandImage version={version} />
+        </Link>
+        <SyncStatus className="mx-3 w-fit" />
+        <SearchBox onClick={() => setSearching(true)} />
+      </div>
       <WiseTabs />
-      <nav className="flex-1 space-y-5 px-2 py-2 md:overflow-y-auto">
+      <nav className="flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
         <FavoritesSection />
         {workspaces.data?.map((ws) => (
           <WorkspaceSection key={ws.id} workspace={ws} />
@@ -186,62 +271,21 @@ export function AppShell() {
           <Plus size={16} /> {t("workspace.new")}
         </button>
       </nav>
-      <div className="space-y-0.5 border-t border-neutral-200 p-2 dark:border-neutral-800">
-        <NavLink to="/trash" className={linkClass}>
-          <Trash2 size={16} /> {t("trash.title")}
+      <div className="flex flex-col gap-2 p-2">
+        <NavLink to="/account" className="flex h-8 w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-[#f0b85a]" data-testid="settings-row">
+          <Settings size={16} className="shrink-0" /> Settings
         </NavLink>
-        {syncLinks && (
-          <NavLink to="/sync" className={linkClass}>
-            <RefreshCw size={16} /> {t("sync.title")}
-            {syncError && (
-              <span className="ml-auto text-amber-500" title={syncErrorText(syncError)} data-sync-warning>
-                <AlertTriangle size={14} aria-label={syncErrorText(syncError)} />
-              </span>
-            )}
-          </NavLink>
-        )}
-        <NavLink to="/account" className={linkClass}>
-          <User size={16} /> {t("account.title")}
-        </NavLink>
-        {user?.role === "admin" && (
-          <NavLink to="/admin" className={linkClass}>
-            <Settings size={16} /> {t("admin.title")}
-            {updateWarning && (
-              <span
-                className="ml-auto text-amber-500"
-                title={t("update.available", {
-                  version: update!.latest!.version,
-                })}
-                data-update-warning
-              >
-                <AlertTriangle
-                  size={14}
-                  aria-label={t("update.available", {
-                    version: update!.latest!.version,
-                  })}
-                />
-              </span>
-            )}
-          </NavLink>
-        )}
-        <button
-          onClick={logout}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60"
-        >
-          <LogOut size={16} /> {t("auth.logout")}
-          {version && (
-            <span
-              className="ml-auto text-xs text-neutral-400"
-              title={t("admin.version", { version })}
-              data-version
-            >
-              v{version}
-            </span>
-          )}
-        </button>
+        <NavUserBlock
+          onLogout={logout}
+          admin={user?.role === "admin"}
+          updateWarning={updateWarning}
+          updateText={update?.latest ? t("update.available", { version: update.latest.version }) : ""}
+          syncLinks={!!syncLinks}
+          syncError={syncError}
+        />
         {import.meta.env.VITE_SOURCE_URL && (
           // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293); its source is offered to everyone who uses it.
-          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 py-1 text-xs text-neutral-400 hover:underline" data-wrise-source>
+          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 text-[11px] leading-tight text-[#c7d5e3]/60 hover:underline" data-wrise-source>
             Based on Nootion · Source code (AGPL-3.0, modified)
           </a>
         )}
@@ -257,7 +301,7 @@ export function AppShell() {
           <button
             onClick={() => setSearching(true)}
             aria-label={t("search.button")}
-            className="rounded-md p-2 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="md:hidden rounded-md p-2 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             <Search size={20} />
           </button>

@@ -18,7 +18,7 @@ function Welcome() {
   const { user } = useSession();
   return (
     <>
-      <header className="px-3 py-1.5 md:hidden">
+      <header className="flex items-center px-3 py-1.5">
         <MenuButton />
       </header>
       <div className="mx-auto max-w-3xl px-5 py-8 sm:px-8 sm:py-16">
