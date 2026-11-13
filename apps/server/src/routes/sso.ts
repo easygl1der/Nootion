@@ -3,7 +3,7 @@ import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { ssoSettingsInput, t } from "@nootion/shared";
 import { hashToken } from "../auth/tokens.js";
-import { invitations, users } from "../db/schema.js";
+import { invitations, users, workspaceMembers, workspaces } from "../db/schema.js";
 import { parseBody, requireAdmin } from "../http.js";
 import { requestLocale } from "../i18n.js";
 import type { SsoIdentity } from "../sso.js";
@@ -208,6 +208,20 @@ export const ssoLoginRoutes: FastifyPluginAsync = async (app) => {
       .set({ ssoSubject: who.subject })
       .where(eq(users.id, created.id))
       .run();
+    // Wrise fork (DEM-1336): a new account joins the shared space named by NOOTION_JOIN_SPACE as editor (its personal space exists already).
+    const joinName = process.env.NOOTION_JOIN_SPACE?.trim();
+    const join = joinName
+      ? db
+          .select({ id: workspaces.id })
+          .from(workspaces)
+          .where(and(eq(workspaces.name, joinName), eq(workspaces.kind, "shared")))
+          .get()
+      : undefined;
+    if (join)
+      db.insert(workspaceMembers)
+        .values({ workspaceId: join.id, userId: created.id, role: "editor" })
+        .onConflictDoNothing()
+        .run();
     if (usable)
       db.update(invitations)
         .set({ usedBy: created.id })
