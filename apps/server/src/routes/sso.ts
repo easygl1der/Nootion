@@ -217,13 +217,18 @@ export const ssoLoginRoutes: FastifyPluginAsync = async (app) => {
   }
 };
 
-/** With SSO on and passwords off, only administrators still sign in with one. */
+/**
+ * With SSO on and passwords off, only administrators still sign in with one.
+ * wrise fork (DEM-1300): so do service accounts at @nootion.local (bots, the viewer proof): only an administrator can make or invite
+ * them, and the company provider never gives that domain, so no person's sign-in goes around SSO this way.
+ */
 export function passwordAllowed(
   app: { sso: { config(): { passwordLogin: boolean } | null } },
   role: string,
+  email?: string | null,
 ): boolean {
   const c = app.sso.config();
-  return !c || c.passwordLogin || role === "admin";
+  return !c || c.passwordLogin || role === "admin" || /@nootion\.local$/i.test(email ?? "");
 }
 
 export const ssoOnlyMessage = () => t("sso.passwordOff");

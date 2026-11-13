@@ -32,7 +32,7 @@ export const invitationRoutes: FastifyPluginAsync = async (app) => {
       const input = parseBody(acceptInvitationInput, req.body);
       const inv = findValid(req.params.token);
       if (!inv) throw invalid();
-      if (!passwordAllowed(app, inv.role)) throw new HttpError(403, "sso_only", ssoOnlyMessage());
+      if (!passwordAllowed(app, inv.role, inv.email ?? input.email)) throw new HttpError(403, "sso_only", ssoOnlyMessage());
       if (inv.email && inv.email !== input.email) {
         throw new HttpError(400, "email_mismatch", t("error.invitationEmail"));
       }

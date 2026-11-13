@@ -72,7 +72,7 @@ export const passwordResetRoutes: FastifyPluginAsync = async (app) => {
     if (!mailer.enabled()) throw new HttpError(400, "mail_off", t("mail.notConfigured"));
     const user = db.select().from(users).where(eq(users.email, email.toLowerCase())).get() ?? db.select().from(users).where(eq(users.email, email)).get();
     // Accounts that sign in through SSO get nothing: their password isn't used.
-    if (user && !user.disabled && passwordAllowed(app, user.role)) {
+    if (user && !user.disabled && passwordAllowed(app, user.role, user.email)) {
       const token = newToken();
       db.insert(passwordResets)
         .values({ tokenHash: hashToken(token), userId: user.id, expiresAt: new Date(Date.now() + RESET_TTL_MS) })

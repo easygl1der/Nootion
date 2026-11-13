@@ -486,3 +486,19 @@ describe("SSO under a path prefix", () => {
     }
   });
 });
+
+// wrise fork (DEM-1300): service accounts at @nootion.local (bots) keep their password when passwords are off for people.
+describe("service accounts with passwords off", () => {
+  it("lets @nootion.local accounts join and sign in with a password, nobody else", async () => {
+    await boris.put("/api/admin/sso", settings({ passwordLogin: false }));
+    const bot = await inviteUser(app, boris, { name: "Bot", email: "finance-p1@nootion.local", password: "bot-password-123", locale: "en" });
+    expect((await bot.get("/api/auth/me")).statusCode).toBe(200);
+    const login = (email: string, password: string) => new Client(app).post("/api/auth/login", { email, password });
+    expect((await login("finance-p1@nootion.local", "bot-password-123")).statusCode).toBe(200);
+    expect((await login("alice@example.com", "alice-password")).statusCode).toBe(403);
+    // Another domain that only ends like it is still a person's account.
+    const link = (await boris.post("/api/admin/invitations", { role: "member" })).json().url as string;
+    const res = await new Client(app).post(`/api/invitations/${link.split("/invite/")[1]}/accept`, { name: "X", email: "x@nootion.local.example.com", password: "x-password-1234" });
+    expect(res.statusCode).toBe(403);
+  });
+});

@@ -39,7 +39,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     }
     if (!(await verifyPassword(user.passwordHash, input.password))) throw failed(input.email);
     if (user.disabled) throw new HttpError(403, "disabled", t("error.accountDisabled"));
-    if (!passwordAllowed(app, user.role)) throw new HttpError(403, "sso_only", ssoOnlyMessage());
+    if (!passwordAllowed(app, user.role, user.email)) throw new HttpError(403, "sso_only", ssoOnlyMessage());
     failures.delete(input.email);
     // The password alone is not enough: the code from the authenticator app comes next (POST /login/2fa).
     if (user.totpSecret) {
