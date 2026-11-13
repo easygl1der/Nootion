@@ -23,19 +23,14 @@ import {
   X,
   Database,
   FileText,
+  Calendar,
   Home,
-  Bell,
-  Inbox,
-  Library,
-  Waypoints,
+  Mail,
+  MessageCircle,
+  NotebookText,
   RefreshCw,
 } from "lucide-react";
-import {
-  disablePush,
-  useReminderNotifications,
-  useReminders,
-} from "../lib/reminders";
-import { useCommentNotifications } from "../comments/queries";
+import { disablePush, useReminderNotifications } from "../lib/reminders";
 import { t, type PageSummary, type WorkspaceSummary } from "@nootion/shared";
 import { workspaceName } from "../lib/labels";
 import { api, isOfflineError } from "../lib/api";
@@ -56,7 +51,6 @@ import { Button, CancelButton, ErrorText, Field, Modal } from "./ui";
 import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
 import {
-  captureShortcutLabel,
   QuickCaptureDialog,
   useCaptureShortcut,
 } from "./QuickCapture";
@@ -75,6 +69,31 @@ function BrandImage() {
     <img src={withBase("/wrise-ai-icon.png")} alt="Wrise AI" className="wrise-mark" />
   ) : (
     <img src={withBase("/wrise-ai-logo.png")} alt="Wrise AI" className="wrise-wordmark" />
+  );
+}
+
+// The Wrise main frame's tab row (portal: components/dem378/sidebar/shell-tabs.tsx). The Wrise pages are the portal's, same origin: plain links, not routed here.
+// Notes is this app, always the active tab.
+function WiseTabs() {
+  const tabs = [
+    { label: "Home", icon: Home, href: "/" },
+    { label: "Chat", icon: MessageCircle, href: "/chat" },
+    { label: "Calendar", icon: Calendar, href: "/calendar" },
+    { label: "Mail", icon: Mail, href: "/mail" },
+  ];
+  const cls = "flex h-8 items-center rounded-md px-2 text-sm font-medium outline-none transition-colors duration-200 focus-visible:ring-2 motion-reduce:transition-none";
+  return (
+    <nav aria-label="Pages" className="wrise-tabs mx-2 mb-1 flex flex-wrap items-center gap-1" data-testid="wrise-tabs">
+      {tabs.map(({ label, icon: Icon, href }) => (
+        <a key={label} href={href} data-no-base aria-label={label} title={label} data-testid={`tab-${label.toLowerCase()}`} className={`${cls} text-neutral-600 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:bg-neutral-800/60`}>
+          <Icon size={16} className="shrink-0" aria-hidden />
+        </a>
+      ))}
+      <NavLink to="/" end aria-label="Notes" title="Notes" data-testid="tab-notes" aria-current="page" className={`${cls} bg-neutral-200/70 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100`}>
+        <NotebookText size={16} className="shrink-0" aria-hidden />
+        <span className="pl-1.5 whitespace-nowrap">Notes</span>
+      </NavLink>
+    </nav>
   );
 }
 
@@ -107,11 +126,6 @@ export function AppShell() {
     setParams((p) => (p.delete("capture"), p), { replace: true });
   }, [params, setParams]);
   useReminderNotifications();
-  // Reminders due and unread mentions or replies.
-  const due =
-    (useReminders().data?.filter((r) => r.due).length ?? 0) +
-    (useCommentNotifications().data?.filter((n) => !n.read).length ?? 0);
-
   async function logout() {
     // This device stops receiving the account's reminders.
     await disablePush().catch(() => {});
@@ -158,59 +172,7 @@ export function AppShell() {
           </kbd>
         )}
       </button>
-      <button
-        onClick={() => setCapturing(true)}
-        className="mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-600 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:bg-neutral-800/60"
-        data-quick-capture-button
-      >
-        <Inbox size={16} /> {t("inbox.capture")}
-        {!touch && (
-          <kbd className="ml-auto rounded border border-neutral-300 px-1 font-sans text-[10px] text-neutral-400 dark:border-neutral-700">
-            {captureShortcutLabel()}
-          </kbd>
-        )}
-      </button>
-      <NavLink
-        to="/"
-        end
-        className={({ isActive }) =>
-          `mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60 ${isActive ? "bg-neutral-200/70 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100" : "text-neutral-600 dark:text-neutral-400"}`
-        }
-      >
-        <Home size={16} /> {t("home.title")}
-      </NavLink>
-      <NavLink
-        to="/reminders"
-        className={({ isActive }) =>
-          `mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60 ${isActive ? "bg-neutral-200/70 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100" : "text-neutral-600 dark:text-neutral-400"}`
-        }
-      >
-        <Bell size={16} /> {t("reminders.title")}
-        {due > 0 && (
-          <span
-            className="ml-auto rounded-full bg-red-600 px-1.5 text-[11px] font-semibold leading-[18px] text-white"
-            data-reminders-due
-          >
-            {due}
-          </span>
-        )}
-      </NavLink>
-      {(
-        [
-          ["/pages", <Library size={16} key="i" />, t("library.title")],
-          ["/graph", <Waypoints size={16} key="i" />, t("graph.title")],
-        ] as const
-      ).map(([to, icon, label]) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            `mx-2 mb-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60 ${isActive ? "bg-neutral-200/70 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100" : "text-neutral-600 dark:text-neutral-400"}`
-          }
-        >
-          {icon} {label}
-        </NavLink>
-      ))}
+      <WiseTabs />
       <nav className="flex-1 space-y-5 px-2 py-2 md:overflow-y-auto">
         <FavoritesSection />
         {workspaces.data?.map((ws) => (

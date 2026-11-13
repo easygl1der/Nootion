@@ -14,7 +14,9 @@ export function withBase(url: string): string {
 export const withoutBase = (path: string) => (BASE && (path === BASE || path.startsWith(`${BASE}/`)) ? path.slice(BASE.length) || "/" : path);
 
 const ATTRS = ["src", "href", "action", "poster"];
+// data-no-base: a link to the Wrise portal itself (same origin, outside the prefix), kept as written.
 function fix(el: Element) {
+  if (el.hasAttribute("data-no-base")) return;
   for (const a of ATTRS) {
     const v = el.getAttribute(a);
     if (v && withBase(v) !== v) el.setAttribute(a, withBase(v));
