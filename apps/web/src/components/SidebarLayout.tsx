@@ -25,8 +25,9 @@ const SidebarContext = createContext<SidebarState | null>(null);
 const COLLAPSED_KEY = "nootion-sidebar-collapsed";
 
 const WIDTH_KEY = "nootion-sidebar-width";
-const DEFAULT_WIDTH = 256;
-const MIN_WIDTH = 200;
+// the Wrise rail is the portal SIDEBAR_WIDTH 16rem (256) inside a 8px frame each side: 272 here; MIN is what the five-tab row needs (253.5 + border) with room, so a saved narrower width is raised too (DEM-1336)
+const DEFAULT_WIDTH = 272;
+const MIN_WIDTH = 264;
 const MAX_WIDTH = 480;
 const clampWidth = (w: number) =>
   Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, w)));
