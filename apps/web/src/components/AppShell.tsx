@@ -72,7 +72,7 @@ function BrandImage({ version }: { version: string | null }) {
     <span className="flex flex-col items-start gap-1.5">
       <img src={withBase(collapsed ? "/wrise-ai-icon.png" : "/wrise-ai-logo.png")} alt="Wrise AI" className="h-8 w-auto" />
       {version && !collapsed && (
-        <span className="pl-0.5 text-[11px] leading-none text-[#c7d5e3]/60" title={t("admin.version", { version })} data-version>
+        <span className="pl-0.5 text-[11px] leading-none text-(color:--sidebar-foreground)/60" title={t("admin.version", { version })} data-version>
           v{version}
         </span>
       )}
@@ -89,17 +89,19 @@ function SearchBox({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label={t("search.button")}
       data-testid="search-or-ask"
-      className="mx-2 flex h-8 items-center gap-2 rounded-md bg-white/[0.08] px-2 text-sm text-[#c7d5e3]/70 outline-none transition-colors duration-150 hover:text-[#c7d5e3] focus-visible:ring-2 focus-visible:ring-[#f0b85a]"
+      className="mx-2 flex h-8 items-center gap-2 rounded-md bg-(--sidebar-accent) px-2 text-sm text-(color:--sidebar-foreground)/70 outline-none transition-colors duration-150 hover:text-(color:--sidebar-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none"
     >
-      <Search size={16} className="shrink-0" aria-hidden />
+      <Search className="size-4 shrink-0" aria-hidden />
       <span className="truncate">{t("search.button")}</span>
       {!touch && (
-        <kbd className="ml-auto font-sans text-xs text-[#c7d5e3]/60">{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}</kbd>
+        <kbd className="pointer-events-none ml-auto inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm bg-transparent px-1 font-sans text-xs font-medium text-(color:--sidebar-foreground)/60 select-none">{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}</kbd>
       )}
     </button>
   );
 }
 
+// The Wrise rail's menu button (ui/sidebar.tsx sidebarMenuButtonVariants): hover and press take the accent background; only width, height and padding transition.
+const RAIL_BTN = "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] hover:bg-(--sidebar-accent) hover:text-(color:--sidebar-accent-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) active:bg-(--sidebar-accent) active:text-(color:--sidebar-accent-foreground) [&_svg]:size-4 [&_svg]:shrink-0";
 const MENU_ITEM = "flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-[#122033] outline-none hover:bg-[#eef3f9] focus-visible:bg-[#eef3f9] dark:text-[#f6f9fd] dark:hover:bg-[#16283b] dark:focus-visible:bg-[#16283b]";
 
 // The rail's account block (portal: nav-user.tsx): avatar, name, role, chevron; the chevron opens the account menu.
@@ -139,18 +141,18 @@ function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, s
   return (
     <>
       <button ref={btn} type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={name} data-testid="nav-user"
-        className={`flex h-12 w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-[#f0b85a] ${open ? "bg-white/[0.08]" : ""}`}>
+        className={`${RAIL_BTN} h-12 ${open ? "bg-(--sidebar-accent)" : ""}`}>
         {face("size-8")}
         <span className="grid min-w-0 flex-1 text-left leading-tight">
           <span className="truncate font-medium">{name}</span>
-          <span className="truncate text-xs text-[#c7d5e3]/70">{role}</span>
+          <span className="truncate text-xs text-(color:--sidebar-foreground)/70">{role}</span>
         </span>
-        <ChevronsUpDown size={16} className="ml-auto shrink-0" aria-hidden />
+        <ChevronsUpDown className="ml-auto size-4 shrink-0" aria-hidden />
         {(updateWarning || syncError) && <span className="sr-only">!</span>}
       </button>
       {open && createPortal(
         <div role="menu" data-user-menu style={{ position: "fixed", zIndex: 70, ...pos }}
-          className="min-w-72 max-w-[calc(100vw-16px)] rounded-lg bg-white p-1 text-[#122033] shadow-lg ring-1 ring-[#122033]/10 dark:bg-[#0b1c33] dark:text-[#f6f9fd] dark:ring-white/10">
+          className="wrise-rail min-w-72 max-w-[calc(100vw-16px)] rounded-lg bg-white p-1 text-[#122033] shadow-lg ring-1 ring-[#122033]/10 dark:bg-[#0b1c33] dark:text-[#f6f9fd] dark:ring-white/10">
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             {face("size-8")}
             <div className="grid flex-1 leading-tight"><span className="truncate font-medium">{name}</span><span className="truncate text-xs text-[#64748b]">{role}</span></div>
@@ -177,8 +179,18 @@ function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, s
   );
 }
 
-// The Wrise main frame's tab row (portal: components/dem378/sidebar/shell-tabs.tsx). The Wrise pages are the portal's, same origin: plain links, not routed here.
-// Notes is this app, always the active tab.
+// The Wrise main frame's tab row, class for class (portal: components/dem378/sidebar/shell-tabs.tsx); colours are the sidebar tokens set on the aside in wrise.css.
+// The label opens and closes with the active state (grid 0fr to 1fr, 200 ms ease-out); Notes, this app, is the active tab.
+const TAB = "wrise-tab flex h-8 items-center rounded-md px-2 text-sm font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none";
+const TAB_ON = "bg-(--sidebar-accent) text-(color:--sidebar-accent-foreground)";
+const TAB_OFF = "text-(color:--sidebar-foreground)/70 hover:bg-(--sidebar-accent)/60";
+function TabLabel({ label, active }: { label: string; active: boolean }) {
+  return (
+    <span className={`grid transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none ${active ? "grid-cols-[1fr]" : "grid-cols-[0fr]"}`}>
+      <span className="overflow-hidden whitespace-nowrap"><span className="pl-1.5">{label}</span></span>
+    </span>
+  );
+}
 function WiseTabs() {
   const tabs = [
     { label: "Home", icon: Home, href: "/" },
@@ -186,17 +198,17 @@ function WiseTabs() {
     { label: "Calendar", icon: Calendar, href: "/calendar" },
     { label: "Mail", icon: Mail, href: "/mail" },
   ];
-  const cls = "flex h-8 items-center rounded-md px-2 text-sm font-medium outline-none transition-colors duration-200 focus-visible:ring-2 motion-reduce:transition-none";
   return (
-    <nav aria-label="Pages" className="wrise-tabs mx-2 mb-1 flex flex-wrap items-center gap-1" data-testid="wrise-tabs">
+    <nav aria-label="Pages" className="wrise-tabs flex flex-wrap items-center gap-1 px-2" data-testid="wrise-tabs">
       {tabs.map(({ label, icon: Icon, href }) => (
-        <a key={label} href={href} data-no-base aria-label={label} title={label} data-testid={`tab-${label.toLowerCase()}`} className={`${cls} text-neutral-600 hover:bg-neutral-200/50 dark:text-neutral-400 dark:hover:bg-neutral-800/60`}>
-          <Icon size={16} className="shrink-0" aria-hidden />
+        <a key={label} href={href} aria-label={label} title={label} data-testid={`tab-${label.toLowerCase()}`} data-no-base className={`${TAB} ${TAB_OFF}`}>
+          <Icon className="size-4 shrink-0" aria-hidden />
+          <TabLabel label={label} active={false} />
         </a>
       ))}
-      <NavLink to="/" end aria-label="Notes" title="Notes" data-testid="tab-notes" aria-current="page" className={`${cls} bg-neutral-200/70 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100`}>
-        <NotebookText size={16} className="shrink-0" aria-hidden />
-        <span className="pl-1.5 whitespace-nowrap">Notes</span>
+      <NavLink to="/" end aria-label="Notes" title="Notes" data-testid="tab-notes" aria-current="page" className={`${TAB} ${TAB_ON}`}>
+        <NotebookText className="size-4 shrink-0" aria-hidden />
+        <TabLabel label="Notes" active />
       </NavLink>
     </nav>
   );
@@ -250,14 +262,14 @@ export function AppShell() {
 
   const sidebar = (
     <>
-      <div className="flex flex-col gap-2 p-2">
-        <Link to="/" className="flex h-auto w-full rounded-md p-1.5 text-left outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#f0b85a]" data-wrise-brand>
+      <div className="wrise-rail flex flex-col gap-2 p-2">
+        <Link to="/" className={`${RAIL_BTN} h-auto p-1.5`} data-wrise-brand>
           <BrandImage version={version} />
         </Link>
         <SyncStatus className="mx-3 w-fit" />
         <SearchBox onClick={() => setSearching(true)} />
+        <WiseTabs />
       </div>
-      <WiseTabs />
       <nav className="flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
         <FavoritesSection />
         {workspaces.data?.map((ws) => (
@@ -271,9 +283,9 @@ export function AppShell() {
           <Plus size={16} /> {t("workspace.new")}
         </button>
       </nav>
-      <div className="flex flex-col gap-2 p-2">
-        <NavLink to="/account" className="flex h-8 w-full items-center gap-2 rounded-md p-2 text-left text-sm outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-[#f0b85a]" data-testid="settings-row">
-          <Settings size={16} className="shrink-0" /> Settings
+      <div className="wrise-rail flex flex-col gap-2 p-2">
+        <NavLink to="/account" className={`${RAIL_BTN} h-8`} data-testid="settings-row">
+          <Settings aria-hidden /> Settings
         </NavLink>
         <NavUserBlock
           onLogout={logout}
@@ -285,7 +297,7 @@ export function AppShell() {
         />
         {import.meta.env.VITE_SOURCE_URL && (
           // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293); its source is offered to everyone who uses it.
-          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 text-[11px] leading-tight text-[#c7d5e3]/60 hover:underline" data-wrise-source>
+          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 text-[11px] leading-tight text-(color:--sidebar-foreground)/60 hover:underline" data-wrise-source>
             Based on Nootion · Source code (AGPL-3.0, modified)
           </a>
         )}

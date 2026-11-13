@@ -41,11 +41,13 @@ aside[aria-label="Sidebar"] {
   background: linear-gradient(180deg, #08243b 0%, #061d32 52%, #07192b 100%) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
   color: #c7d5e3;
+  /* the portal's sidebar tokens (apps/portal/app/global.css), same names; the rail classes read them */
+  --sidebar-foreground: #c7d5e3; --sidebar-accent: rgba(255, 255, 255, 0.08); --sidebar-accent-foreground: #ffffff; --sidebar-ring: #f0b85a;
 }
-aside[aria-label="Sidebar"] a[aria-current="page"] {
+aside[aria-label="Sidebar"] a[aria-current="page"]:not(.wrise-tab) {
   color: #fff; background: linear-gradient(90deg, rgba(39, 91, 147, 0.9), rgba(30, 70, 115, 0.72)) !important; box-shadow: inset 3px 0 #f6bf3e;
 }
-aside[aria-label="Sidebar"] a[aria-current="page"] svg { color: #ffca4f; }
+aside[aria-label="Sidebar"] a[aria-current="page"]:not(.wrise-tab) svg { color: #ffca4f; }
 aside[aria-label="Sidebar"] .uppercase { color: rgba(167, 184, 200, 0.75); letter-spacing: 0.06em; }
 aside[aria-label="Sidebar"] [data-wrise-source] { color: #8197ad; }
 .wrise-brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; color: #fff; text-decoration: none; }
@@ -64,7 +66,10 @@ input:focus { border-color: #f0b85a !important; box-shadow: 0 0 0 3px rgba(240, 
 h1 { letter-spacing: -0.01em; }
 table th { background: #f6f9fd; }
 
+/* prefers-reduced-motion: the portal cuts every animation and transition to 1 ms (global.css, DEM-1298); the rail does the same here */
+@media (prefers-reduced-motion: reduce) {
+  aside[aria-label="Sidebar"] *, aside[aria-label="Sidebar"] *::before, aside[aria-label="Sidebar"] *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+}
 
-/* the five tabs: the Wrise rail marks the active tab by its background only (no gold stripe) */
-aside[aria-label="Sidebar"] .wrise-tabs a[aria-current="page"] { box-shadow: none; }
-aside[aria-label="Sidebar"] .wrise-tabs a[aria-current="page"] svg { color: inherit; }
+/* the rail parts (header, footer) use the portal's Tailwind radii: rounded-sm 4px, md 6px, lg 8px (the page body keeps the larger Wrise radii above) */
+.wrise-rail { --radius-sm: 0.25rem; --radius-md: 0.375rem; --radius-lg: 0.5rem; }
