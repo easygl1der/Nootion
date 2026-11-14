@@ -28,7 +28,6 @@ import {
   ChevronsUpDown,
   BadgeCheck,
   Bell,
-  Info,
   Home,
   Mail,
   MessageCircle,
@@ -190,13 +189,6 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
               <RefreshCw size={16} /> {t("sync.title")}
               {syncError && <span className="ml-auto text-amber-500" title={syncErrorText(syncError)} data-sync-warning><AlertTriangle size={14} aria-label={syncErrorText(syncError)} /></span>}
             </button>
-          )}
-          {import.meta.env.VITE_SOURCE_URL && (
-            // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293), so everyone who uses it is offered its source, here on every page
-            // (Yihua 2026-11-14, DEM-1392: not as a line in the sidebar). The portal's docs page "Open-source software" says the same.
-            <a role="menuitem" href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className={MENU_ITEM} data-wrise-source onClick={() => setOpen(false)}>
-              <Info size={16} /> About Notes · Source code (AGPL-3.0)
-            </a>
           )}
           <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
           <button role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); onLogout(); }}><LogOut size={16} /> {wrise ? "Log out" : t("auth.logout")}</button>
