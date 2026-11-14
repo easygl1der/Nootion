@@ -21,7 +21,6 @@ import {
   X,
   Zap,
   Maximize2,
-  Minimize2,
 } from "lucide-react";
 import {
   t,
@@ -83,7 +82,6 @@ export function ViewBar({
   onSelect,
   actions,
   editable,
-  expanded,
   onExpand,
 }: {
   data: DatabaseData;
@@ -91,9 +89,8 @@ export function ViewBar({
   onSelect: (viewId: string) => void;
   actions?: Actions;
   editable: boolean;
-  /** The view fills the whole window (DEM-1447); absent on public pages. */
-  expanded?: boolean;
-  onExpand?: (on: boolean) => void;
+  /** Shows the view full screen (DEM-1447); absent on public pages and while it is full screen. */
+  onExpand?: () => void;
 }) {
   const [menu, setMenu] = useState<{ kind: "view" | "add" | "filter" | "sort" | "group" | "date" | "props" | "more" | "templates"; anchor: HTMLElement } | null>(null);
   const close = () => setMenu(null);
@@ -169,15 +166,8 @@ export function ViewBar({
             <MoreHorizontal size={16} />
           </button>
           {onExpand && (
-            <button
-              className={tool(!!expanded)}
-              onClick={() => onExpand(!expanded)}
-              title={expanded ? `${t("database.collapse")} (Esc)` : t("database.expand")}
-              aria-pressed={!!expanded}
-              data-db-expand
-            >
-              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              <span className="hidden sm:inline">{expanded ? t("database.collapse") : t("database.expand")}</span>
+            <button className={tool(false)} onClick={onExpand} title={t("database.expand")} data-db-expand>
+              <Maximize2 size={14} /> <span className="hidden sm:inline">{t("database.expand")}</span>
             </button>
           )}
         </div>
