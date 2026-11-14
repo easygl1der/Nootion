@@ -51,6 +51,7 @@ import { useSession } from "../lib/session";
 import { useUpdateStatus, useVersion } from "./UpdateNotice";
 import { buildTree, pageTitle } from "../lib/tree";
 import { DRAG_TYPE, PageTree } from "./PageTree";
+import { SlideIndicator } from "./SlideIndicator";
 import { Button, CancelButton, ErrorText, Field, Modal } from "./ui";
 import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
@@ -300,7 +301,8 @@ export function AppShell() {
         <SearchBox onClick={() => setSearching(true)} />
         <WiseTabs />
       </div>
-      <nav className="flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
+      <nav className="relative isolate flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
+        <SlideIndicator />
         <FavoritesSection />
         {workspaces.data?.map((ws) => (
           <WorkspaceSection key={ws.id} workspace={ws} />

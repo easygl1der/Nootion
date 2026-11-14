@@ -44,10 +44,26 @@ aside[aria-label="Sidebar"] {
   /* the portal's sidebar tokens (apps/portal/app/global.css), same names; the rail classes read them */
   --sidebar-foreground: #c7d5e3; --sidebar-accent: rgba(255, 255, 255, 0.08); --sidebar-accent-foreground: #ffffff; --sidebar-ring: #f0b85a;
 }
+/* DEM-1395 (DEM-1394 style B "Sliding", the portal's global.css .sidebar-slide): the selected page row is a soft 6px block with a
+   2px gold line, 8px clear top and bottom; SlideIndicator (components/SlideIndicator.tsx) slides it between rows. Before it lands,
+   the row draws the same block itself. Hover .05 and press 0.98, 100 ms; the gold ring only for the keyboard. */
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a { position: relative; outline: none; transition: background-color 100ms ease-out, color 100ms ease-out, transform 100ms ease-out; }
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a:active { transform: scale(0.98); }
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a:focus-visible { outline: 2px solid #f0b85a; outline-offset: -2px; }
 aside[aria-label="Sidebar"] a[aria-current="page"]:not(.wrise-tab) {
-  color: #fff; background: linear-gradient(90deg, rgba(39, 91, 147, 0.9), rgba(30, 70, 115, 0.72)) !important; box-shadow: inset 3px 0 #f6bf3e;
+  color: #fff; font-weight: 500; background: rgba(255, 255, 255, 0.1) !important; box-shadow: none; border-radius: 6px;
 }
-aside[aria-label="Sidebar"] a[aria-current="page"]:not(.wrise-tab) svg { color: #ffca4f; }
+aside[aria-label="Sidebar"] a[aria-current="page"]:not(.wrise-tab) svg { color: #f0b85a; }
+aside[aria-label="Sidebar"] a[aria-current="page"]:not(.wrise-tab)::before,
+.wrise-slide::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: #f0b85a; }
+[data-slide-ready] a[aria-current="page"]:not(.wrise-tab) { background: transparent !important; }
+[data-slide-ready] a[aria-current="page"]:not(.wrise-tab):hover { background: rgba(255, 255, 255, 0.05) !important; }
+[data-slide-ready] a[aria-current="page"]:not(.wrise-tab)::before { content: none; }
+.wrise-slide {
+  position: absolute; left: 0; top: 0; z-index: -1; border-radius: 6px; background: rgba(255, 255, 255, 0.1); pointer-events: none; opacity: 0;
+  transition: transform 220ms cubic-bezier(.4, 0, .2, 1), height 220ms cubic-bezier(.4, 0, .2, 1), width 220ms cubic-bezier(.4, 0, .2, 1);
+}
 aside[aria-label="Sidebar"] .uppercase { color: rgba(167, 184, 200, 0.75); letter-spacing: 0.06em; }
 aside[aria-label="Sidebar"] [data-wrise-source] { color: #8197ad; }
 .wrise-brand { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; color: #fff; text-decoration: none; }
