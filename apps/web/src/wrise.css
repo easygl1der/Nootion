@@ -82,6 +82,27 @@ input:focus { border-color: #f0b85a !important; box-shadow: 0 0 0 3px rgba(240, 
 /* ---- page + database ---- */
 table th { background: #f6f9fd; }
 
+/* ---- DEM-1445: the portal's frame (components/ui/sidebar.tsx variant "inset", global.css .portal-themed) on wide screens ----
+   a flat #07192b frame (--sidebar), the rail's gradient inside an 8px padding, the page a white card 8px in with rounded-xl and shadow-sm.
+   Same numbers as the portal, so going between Notes and the portal moves nothing but the page. */
+@media (min-width: 768px) {
+  .wrise-frame { background: #07192b; }
+  .wrise-frame > aside[aria-label="Sidebar"] { padding: 8px; border: 0 !important; background-clip: content-box !important; }
+  .wrise-page { margin: 8px 8px 8px 0; border-radius: var(--radius-xl); background: #fff; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+  .dark .wrise-page { background: #071528; }
+  aside[data-folded] + .wrise-page, aside[data-folded] ~ .wrise-page { margin-left: 8px; }
+  /* folded: the icons only, as the portal's collapsible="icon" rail */
+  aside[data-folded] .wrise-label, aside[data-folded] .wrise-tree > *, aside[data-folded] [data-version], aside[data-folded] [data-testid="nootion-nav"] { display: none !important; }
+  /* the empty tree still fills, so Settings and the account stay at the foot; the brand is the portal's 32px icon button */
+  aside[data-folded] .wrise-tree { padding: 0; }
+  aside[data-folded] [data-wrise-brand] { height: 32px; padding: 0 !important; justify-content: center; }
+  aside[data-folded] [data-wrise-brand] img { height: 32px; }
+  aside[data-folded] [data-testid="nav-user"] { height: 32px; padding: 0; justify-content: center; }
+  aside[data-folded] .wrise-rail { padding: 4px; }
+  aside[data-folded] .wrise-tabs { flex-direction: column; padding: 0; }
+  aside[data-folded] [data-testid="search-or-ask"] { margin: 0; justify-content: center; padding: 0; width: 32px; }
+}
+
 /* prefers-reduced-motion: the portal cuts every animation and transition to 1 ms (global.css, DEM-1298); the rail does the same here */
 @media (prefers-reduced-motion: reduce) {
   aside[aria-label="Sidebar"] *, aside[aria-label="Sidebar"] *::before, aside[aria-label="Sidebar"] *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }

@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -12,29 +11,29 @@ import { useLocation } from "react-router-dom";
 import { PanelLeft } from "lucide-react";
 import { isMac } from "./QuickCapture";
 import { t } from "@nootion/shared";
+import { PORTAL_WIDTH, readPortalFolded, readPortalWidth, savePortalFolded, savePortalWidth } from "../lib/wrise";
 
 interface SidebarState {
   /** Opens the drawer on phones. */
   open: () => void;
-  /** Wide screens: the sidebar is put away, and shows over the content while hovered. */
+  /** Wide screens: the sidebar is folded to its icons, as the portal's (DEM-1445). */
   collapsed: boolean;
   toggle: () => void;
-  peek: (on: boolean) => void;
 }
 const SidebarContext = createContext<SidebarState | null>(null);
 const COLLAPSED_KEY = "nootion-sidebar-collapsed";
 
 const WIDTH_KEY = "nootion-sidebar-width";
-// the Wrise rail is the portal SIDEBAR_WIDTH 16rem (256) inside a 8px frame each side: 272 here; MIN is what the five-tab row needs (253.5 + border) with room, so a saved narrower width is raised too (DEM-1336)
-const DEFAULT_WIDTH = 272;
-const MIN_WIDTH = 264;
-const MAX_WIDTH = 480;
+// DEM-1445: the portal's width, range and saved value, so the rail does not change size between Notes and the portal (the tab row wraps below 254px).
+const DEFAULT_WIDTH = PORTAL_WIDTH.initial;
+const MIN_WIDTH = PORTAL_WIDTH.min;
+const MAX_WIDTH = PORTAL_WIDTH.max;
 const clampWidth = (w: number) =>
   Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, w)));
 
 function readWidth() {
   try {
-    const w = Number(localStorage.getItem(WIDTH_KEY));
+    const w = readPortalWidth() ?? Number(localStorage.getItem(WIDTH_KEY));
     return w ? clampWidth(w) : DEFAULT_WIDTH;
   } catch {
     return DEFAULT_WIDTH;
@@ -43,16 +42,16 @@ function readWidth() {
 
 function readCollapsed() {
   try {
-    return localStorage.getItem(COLLAPSED_KEY) === "1";
+    return readPortalFolded() ?? localStorage.getItem(COLLAPSED_KEY) === "1";
   } catch {
     return false;
   }
 }
 
 /**
- * Sidebar next to the content on wide screens, which can be put away (« or Ctrl+\) and then shows over the content
- * when the menu button or the left edge is hovered, as in Notion. On phones it slides in over the content from the
- * menu button, and closes when a link is followed.
+ * The portal's frame (DEM-1445, apps/portal/components/ui/sidebar.tsx variant "inset"): on wide screens the rail sits in an 8px navy frame and the
+ * page is a white card beside it; folding (the menu button, the edge, or Ctrl+\\) leaves the rail's icons. Width and fold are the portal's own,
+ * so moving between Notes and the portal changes only the page. On phones the sidebar slides in over the content and closes when a link is followed.
  */
 export function SidebarLayout({
   sidebar,
@@ -65,22 +64,9 @@ export function SidebarLayout({
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [width, setWidth] = useState(readWidth);
   const [resizing, setResizing] = useState(false);
-  const [peeking, setPeeking] = useState(false);
-  const hideTimer = useRef<number | undefined>(undefined);
   const location = useLocation();
-  const main = useRef<HTMLElement>(null);
   useEffect(() => setOpen(false), [location.pathname]);
-  // A gentle fade when moving to another page; nothing is remounted for it.
-  useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    main.current?.animate?.(
-      [
-        { opacity: 0, transform: "translateY(4px)" },
-        { opacity: 1, transform: "none" },
-      ],
-      { duration: 240, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
-    );
-  }, [location.pathname]);
+  // No fade or nudge on a page change: route changes are instant in the portal (DESIGN.md Motion), and arriving from it must not look like a new site (DEM-1445).
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -89,13 +75,13 @@ export function SidebarLayout({
   }, [open]);
 
   const toggle = useCallback(() => {
-    setPeeking(false);
     setCollapsed((c) => {
       try {
         localStorage.setItem(COLLAPSED_KEY, c ? "0" : "1");
       } catch {
         // Private browsing: not remembered.
       }
+      savePortalFolded(!c);
       return !c;
     });
   }, []);
@@ -110,20 +96,13 @@ export function SidebarLayout({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [toggle]);
-  // Leaving it hides it a moment later, so that the mouse can go from the button to the sidebar.
-  const peek = useCallback((on: boolean) => {
-    window.clearTimeout(hideTimer.current);
-    if (on) setPeeking(true);
-    else hideTimer.current = window.setTimeout(() => setPeeking(false), 300);
-  }, []);
-  // Following a link from it puts it away.
-  useEffect(() => setPeeking(false), [location.pathname]);
   const saveWidth = useCallback((w: number) => {
     try {
       localStorage.setItem(WIDTH_KEY, String(w));
     } catch {
       // Private browsing: not remembered.
     }
+    savePortalWidth(w);
   }, []);
   // The edge: dragged, it resizes the sidebar; clicked, it puts it away (or docks it back), as in Notion.
   const onHandleDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -177,20 +156,19 @@ export function SidebarLayout({
   };
 
   const state = useMemo(
-    () => ({ open: () => setOpen(true), collapsed, toggle, peek }),
-    [collapsed, toggle, peek],
+    () => ({ open: () => setOpen(true), collapsed, toggle }),
+    [collapsed, toggle],
   );
 
   // On phones it takes the visible height (above the browser's toolbars) and scrolls as a whole, so that its
   // footer (account, administration) can always be reached; on wide screens only its page list scrolls.
-  const desktop = collapsed
-    ? `md:top-12 md:bottom-3 md:rounded-r-xl md:border md:border-l-0 md:shadow-2xl ${peeking ? "md:translate-x-0" : "md:-translate-x-full"}`
-    : "md:static md:z-auto md:translate-x-0 md:transition-none";
+  // Folded: the portal's icon rail, 2.5rem + its 8px frame each side + 2px, overlapping the page's 8px gap by 2px.
+  const desktop = `md:static md:z-auto md:translate-x-0 md:transition-none ${collapsed ? "md:w-[58px] md:-mr-0.5" : "md:w-(--sidebar-w)"}`;
   return (
     <SidebarContext.Provider value={state}>
       {/* overflow-hidden: the fade-in nudges the page down 4px, which must not make the window scroll. */}
       <div
-        className={`flex h-full overflow-hidden ${resizing ? "cursor-col-resize select-none" : ""}`}
+        className={`wrise-frame flex h-full overflow-hidden ${resizing ? "cursor-col-resize select-none" : ""}`}
         style={{ "--sidebar-w": `${width}px` } as React.CSSProperties}
       >
         {open && (
@@ -200,21 +178,10 @@ export function SidebarLayout({
             aria-hidden
           />
         )}
-        {/* Put away: hovering the left edge brings it out. */}
-        {collapsed && (
-          <div
-            className="fixed inset-y-0 left-0 z-40 hidden w-2 md:block"
-            onMouseEnter={() => peek(true)}
-            onMouseLeave={() => peek(false)}
-            aria-hidden
-          />
-        )}
         <aside
           aria-label={t("sidebar.label")}
-          inert={collapsed && !peeking && !open ? true : undefined}
-          onMouseEnter={collapsed ? () => peek(true) : undefined}
-          onMouseLeave={collapsed ? () => peek(false) : undefined}
-          className={`group/sidebar fixed top-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col overflow-y-auto border-r pb-[env(safe-area-inset-bottom)] md:h-auto md:overflow-visible md:pb-0 border-neutral-200 bg-neutral-50 transition-transform duration-200 md:w-(--sidebar-w) dark:border-neutral-800 dark:bg-neutral-950 ${open ? "translate-x-0 shadow-2xl" : "-translate-x-full"} ${desktop}`}
+          data-folded={collapsed ? "" : undefined}
+          className={`group/sidebar fixed top-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col overflow-y-auto border-r pb-[env(safe-area-inset-bottom)] md:h-auto md:overflow-visible md:pb-0 border-neutral-200 bg-neutral-50 transition-transform duration-200 dark:border-neutral-800 dark:bg-neutral-950 ${open ? "translate-x-0 shadow-2xl" : "-translate-x-full"} ${desktop}`}
         >
           {sidebar}
           {/* The edge, to resize or put away (wide screens). */}
@@ -237,7 +204,7 @@ export function SidebarLayout({
             />
           </div>
         </aside>
-        <main ref={main} className="min-w-0 flex-1 overflow-y-auto">
+        <main className="wrise-page min-w-0 flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
@@ -259,8 +226,6 @@ export function MenuButton({ className = "" }: { className?: string }) {
           ? ctx.toggle()
           : ctx.open()
       }
-      onMouseEnter={() => ctx.collapsed && ctx.peek(true)}
-      onMouseLeave={() => ctx.collapsed && ctx.peek(false)}
       aria-label="Toggle Sidebar"
       data-menu-button
       title={`Toggle Sidebar (${isMac() ? "⌘" : "Ctrl+"}\\)`}

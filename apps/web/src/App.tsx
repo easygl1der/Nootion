@@ -20,6 +20,8 @@ import { t } from "@nootion/shared";
 import { LibraryPage } from "./pages/LibraryPage";
 import { SyncPage } from "./pages/SyncPage";
 import { lazy, Suspense } from "react";
+import { withBase } from "./lib/base";
+import { PORTAL_WIDTH, readPortalFolded, readPortalWidth } from "./lib/wrise";
 
 // The graph (and its layout code) loads only when opened.
 const GraphPage = lazy(() => import("./pages/GraphPage").then((m) => ({ default: m.GraphPage })));
@@ -46,10 +48,25 @@ export function App() {
   return <PrivateApp />;
 }
 
+// While the session loads, wide screens keep the portal's frame that index.html painted (its .wrise-boot styles), so the page never goes white (DEM-1445).
+function BootFrame() {
+  const folded = readPortalFolded() === true;
+  const w = folded ? 58 : Math.min(PORTAL_WIDTH.max, Math.max(PORTAL_WIDTH.min, Math.round(readPortalWidth() ?? PORTAL_WIDTH.initial)));
+  return (
+    <>
+      <div className="wrise-boot" style={{ "--w": `${w}px` } as React.CSSProperties} aria-hidden>
+        <div className="wrise-boot-rail"><div><img src={withBase(folded ? "/wrise-ai-icon.png" : "/wrise-ai-logo.png")} alt="" /></div></div>
+        <div className="wrise-boot-page" />
+      </div>
+      <div className="flex h-full items-center justify-center text-sm text-neutral-500 md:hidden" role="status">{t("common.loading")}</div>
+    </>
+  );
+}
+
 function PrivateApp() {
   const { user, needsSetup, loading } = useSession();
   const location = useLocation();
-  if (loading) return <div className="flex h-full items-center justify-center text-sm text-neutral-500">{t("common.loading")}</div>;
+  if (loading) return <BootFrame />;
 
   if (needsSetup) {
     return (

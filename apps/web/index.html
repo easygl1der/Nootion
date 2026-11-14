@@ -13,9 +13,33 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Wrise" />
     <title>Wrise Workspace</title>
+    <!-- wrise fork (DEM-1445): before the app's script runs, wide screens already show the portal's frame (navy frame, the rail at its saved width with
+         the logo, the white page card), so arriving from the portal never paints a blank white page. The app replaces #root's content. -->
+    <style>
+      @media (min-width: 768px) {
+        html, body { margin: 0; height: 100%; background: #07192b; }
+        .wrise-boot { display: flex; height: 100vh; background: #07192b; }
+        .wrise-boot-rail { width: var(--w, 288px); flex-shrink: 0; padding: 8px; box-sizing: border-box; }
+        .wrise-boot-rail > div { height: 100%; padding: 14px; box-sizing: border-box; background: linear-gradient(180deg, #08243b 0%, #061d32 52%, #07192b 100%); }
+        .wrise-boot-rail img { height: 32px; width: auto; display: block; }
+        .wrise-boot-page { flex: 1; margin: 8px 8px 8px 0; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+      }
+      @media (max-width: 767px) { .wrise-boot { display: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="wrise-boot" id="wrise-boot"><div class="wrise-boot-rail"><div><img src="/wrise-ai-logo.png" alt="" /></div></div><div class="wrise-boot-page"></div></div></div>
+    <script>
+      // the portal's saved width and fold (lib/wrise.ts readPortalWidth / readPortalFolded), as the app will draw them
+      try {
+        var c = function (n) { var m = document.cookie.match("(?:^|; )" + n + "=([^;]*)"); return m && m[1]; };
+        var w = Number(JSON.parse(localStorage.getItem("wrise.pref.sidebarWidth") || "null") || c("sidebar_width")) || 288;
+        var folded = c("sidebar_state") === "false";
+        var boot = document.getElementById("wrise-boot");
+        boot.style.setProperty("--w", (folded ? 58 : Math.min(400, Math.max(208, Math.round(w)))) + "px");
+        if (folded) { var i = boot.querySelector("img"); i.src = i.src.replace("wrise-ai-logo", "wrise-ai-icon"); }
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

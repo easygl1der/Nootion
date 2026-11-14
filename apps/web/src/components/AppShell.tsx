@@ -73,7 +73,7 @@ import { SyncStatus } from "./SyncStatus";
 import { useLiveEvents } from "../lib/live";
 import { pageIcon } from "../lib/icons";
 import { syncErrorText, useDesktopSync } from "../pages/SyncPage";
-import { useWriseMe, writeAvatar, writeLogout, writeRole, writeSettings, type WriseMe } from "../lib/wrise";
+import { useWriseMe, writeAvatars, writeLogout, writeRole, writeSettings, type WriseMe } from "../lib/wrise";
 
 // Official Wrise files (apps/web/public): the wordmark, and the mark when the sidebar is put away.
 // The Wrise rail's brand row (portal: sidebar-logo.tsx in SidebarHeader): the official logo, "v<version>" under it.
@@ -103,9 +103,9 @@ function SearchBox({ onClick }: { onClick: () => void }) {
       className="mx-2 flex h-8 items-center gap-2 rounded-md bg-(--sidebar-accent) px-2 text-sm text-(color:--sidebar-foreground)/70 outline-none transition-colors duration-150 hover:text-(color:--sidebar-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none"
     >
       <Search className="size-4 shrink-0" aria-hidden />
-      <span className="truncate">{t("search.button")}</span>
+      <span className="wrise-label truncate">{t("search.button")}</span>
       {!touch && (
-        <kbd className="pointer-events-none ml-auto inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm bg-transparent px-1 font-sans text-xs font-medium text-(color:--sidebar-foreground)/60 select-none">{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}</kbd>
+        <kbd className="wrise-label pointer-events-none ml-auto inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm bg-transparent px-1 font-sans text-xs font-medium text-(color:--sidebar-foreground)/60 select-none">{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K"}</kbd>
       )}
     </button>
   );
@@ -122,7 +122,8 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
   wrise: WriseMe | null; onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
 }) {
   const { user } = useSession();
-  const [noPhoto, setNoPhoto] = useState(false);
+  // how many of the faces failed to load: the next one is tried, then the initials (DEM-1445)
+  const [failed, setFailed] = useState(0);
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<React.CSSProperties>({});
@@ -144,12 +145,12 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
   }, [open]);
   const name = wrise?.displayName ?? user?.name ?? "";
   const role = wrise ? writeRole(wrise.role) : (user?.role ?? "").replace(/^./, (c) => c.toUpperCase());
-  const photo = wrise ? (noPhoto ? null : writeAvatar(wrise.userId)) : user?.avatarUrl;
+  const photo = wrise ? (writeAvatars(wrise)[failed] ?? null) : user?.avatarUrl;
   const go = (to: string) => { setOpen(false); navigate(to); };
   const settings = (section?: string) => { setOpen(false); writeSettings(section); };
   const face = (size: string) => (
     photo
-      ? <img src={photo} alt="" data-no-base={wrise ? "" : undefined} onError={() => setNoPhoto(true)} className={`${size} shrink-0 rounded-lg object-cover`} />
+      ? <img key={photo} src={photo} alt="" data-no-base={wrise ? "" : undefined} onError={() => setFailed((n) => n + 1)} className={`${size} shrink-0 rounded-lg object-cover`} />
       : <span className={`${size} flex shrink-0 items-center justify-center rounded-lg bg-[#f6f9fd] text-xs font-medium text-[#122033]`}>
           {name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?"}
         </span>
@@ -159,11 +160,11 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
       <button ref={btn} type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={name} data-testid="nav-user"
         className={`${RAIL_BTN} h-12 ${open ? "bg-(--sidebar-accent)" : ""}`}>
         {face("size-8")}
-        <span className="grid min-w-0 flex-1 text-left leading-tight">
+        <span className="wrise-label grid min-w-0 flex-1 text-left leading-tight">
           <span className="truncate font-medium">{name}</span>
           <span className="truncate text-xs text-(color:--sidebar-foreground)/70">{role}</span>
         </span>
-        <ChevronsUpDown className="ml-auto size-4 shrink-0" aria-hidden />
+        <ChevronsUpDown className="wrise-label ml-auto size-4 shrink-0" aria-hidden />
         {(updateWarning || syncError) && <span className="sr-only">!</span>}
       </button>
       {open && createPortal(
@@ -211,18 +212,20 @@ const TAB_ON = "bg-(--sidebar-accent) text-(color:--sidebar-accent-foreground)";
 const TAB_OFF = "text-(color:--sidebar-foreground)/70 hover:bg-(--sidebar-accent)/60";
 function TabLabel({ label, active }: { label: string; active: boolean }) {
   return (
-    <span className={`grid transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none ${active ? "grid-cols-[1fr]" : "grid-cols-[0fr]"}`}>
+    <span className={`wrise-label grid transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none ${active ? "grid-cols-[1fr]" : "grid-cols-[0fr]"}`}>
       <span className="overflow-hidden whitespace-nowrap"><span className="pl-1.5">{label}</span></span>
     </span>
   );
 }
-function WiseTabs() {
-  const tabs = [
-    { label: "Home", icon: Home, href: "/" },
-    { label: "Chat", icon: MessageCircle, href: "/chat" },
-    { label: "Calendar", icon: Calendar, href: "/calendar" },
-    { label: "Mail", icon: Mail, href: "/mail" },
-  ];
+const WISE_TABS = [
+  { id: "home", label: "Home", icon: Home, href: "/" },
+  { id: "chat", label: "Chat", icon: MessageCircle, href: "/chat" },
+  { id: "calendar", label: "Calendar", icon: Calendar, href: "/calendar" },
+  { id: "mail", label: "Mail", icon: Mail, href: "/mail" },
+];
+// The tabs this account has in the portal (its /agent/api/me `tabs`, from the portal's shellTabs: an RM has no Chat), so the row is the same on both sides (DEM-1445).
+function WiseTabs({ shown }: { shown?: string[] }) {
+  const tabs = shown ? WISE_TABS.filter((tab) => shown.includes(tab.id)) : WISE_TABS;
   return (
     <nav aria-label="Pages" className="wrise-tabs flex flex-wrap items-center gap-1 px-2" data-testid="wrise-tabs">
       {tabs.map(({ label, icon: Icon, href }) => (
@@ -343,15 +346,15 @@ export function AppShell() {
   const sidebar = (
     <>
       <div className="wrise-rail flex flex-col gap-2 p-2">
-        <Link to="/" className={`${RAIL_BTN} h-auto p-1.5`} data-wrise-brand>
+        <Link to="/" className={`${RAIL_BTN} h-auto p-1.5!`} data-wrise-brand>
           <BrandImage version={version} />
         </Link>
         <SyncStatus className="mx-3 w-fit" />
         <SearchBox onClick={() => setSearching(true)} />
-        <WiseTabs />
+        <WiseTabs shown={wrise?.tabs} />
         <NootionNav onCapture={() => setCapturing(true)} onNewPage={personal ? newPage : undefined} />
       </div>
-      <nav className="relative isolate flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
+      <nav className="wrise-tree relative isolate flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
         <SlideIndicator />
         <FavoritesSection />
         {workspaces.data?.map((ws) => (
@@ -369,11 +372,11 @@ export function AppShell() {
         {/* One Settings: the portal's dialog when Notes runs inside it (DEM-1392), Nootion's account page otherwise. */}
         {wrise ? (
           <button type="button" onClick={() => writeSettings()} className={`${RAIL_BTN} h-8`} data-testid="settings-row">
-            <Settings aria-hidden /> Settings
+            <Settings aria-hidden /> <span className="wrise-label">Settings</span>
           </button>
         ) : (
           <NavLink to="/account" className={`${RAIL_BTN} h-8`} data-testid="settings-row">
-            <Settings aria-hidden /> Settings
+            <Settings aria-hidden /> <span className="wrise-label">Settings</span>
           </NavLink>
         )}
         <NavUserBlock
