@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronRight, GripVertical, Maximize2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, GripVertical, Maximize2, Minimize2, Plus, Trash2 } from "lucide-react";
 import {
   applyView,
   canGroupBy,
@@ -97,9 +97,22 @@ export function DatabaseViews(props: ViewProps) {
   }, [expanded]);
   const body = (
     <>
-      {expanded && <div className="mb-2 truncate text-lg font-semibold">🗃 {pageTitle(data.title)}</div>}
+      {expanded && (
+        // The way back sits on the title row, so it stays in sight on a phone where the tool row runs off the screen.
+        <div className="mb-2 flex items-center gap-2">
+          <div className="min-w-0 flex-1 truncate text-lg font-semibold">🗃 {pageTitle(data.title)}</div>
+          <button
+            onClick={() => setExpanded(false)}
+            title={`${t("database.collapse")} (Esc)`}
+            data-db-collapse
+            className="flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-sm text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          >
+            <Minimize2 size={14} /> {t("database.collapse")}
+          </button>
+        </div>
+      )}
       {view && (
-        <ViewBar data={data} view={view} onSelect={select} actions={actions} editable={editable} expanded={expanded} onExpand={actions ? setExpanded : undefined} />
+        <ViewBar data={data} view={view} onSelect={select} actions={actions} editable={editable} onExpand={actions && !expanded ? () => setExpanded(true) : undefined} />
       )}
       {view?.type === "board" ? (
         <div className="pt-2">
