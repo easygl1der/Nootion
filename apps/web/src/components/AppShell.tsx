@@ -33,8 +33,14 @@ import {
   MessageCircle,
   NotebookText,
   RefreshCw,
+  ChevronRight,
+  Inbox,
+  Library,
+  SquarePen,
+  Waypoints,
 } from "lucide-react";
-import { disablePush, useReminderNotifications } from "../lib/reminders";
+import { disablePush, useReminderNotifications, useReminders } from "../lib/reminders";
+import { useCommentNotifications } from "../comments/queries";
 import { t, type PageSummary, type WorkspaceSummary } from "@nootion/shared";
 import { workspaceName } from "../lib/labels";
 import { api, isOfflineError } from "../lib/api";
@@ -56,6 +62,7 @@ import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
 import {
   QuickCaptureDialog,
+  captureShortcutLabel,
   useCaptureShortcut,
 } from "./QuickCapture";
 import { MobileBar, SidebarLayout, useSidebarCollapsed } from "./SidebarLayout";
@@ -232,6 +239,44 @@ function WiseTabs() {
   );
 }
 
+// Nootion's own rows under the Wrise tabs, as Notion keeps them above the spaces (DEM-1446, Yihua 2026-11-14: "personal space 上面应该也是有一些东西"):
+// New page (in the Personal space), Quick capture, Notifications with its count, All pages, Graph, in the rail's style. Nootion's Home is the Notes tab.
+function NootionNav({ onCapture, onNewPage }: { onCapture: () => void; onNewPage?: () => void }) {
+  const touch = useIsTouch();
+  const due =
+    (useReminders().data?.filter((r) => r.due).length ?? 0) +
+    (useCommentNotifications().data?.filter((n) => !n.read).length ?? 0);
+  const row = `${RAIL_BTN} relative h-8 text-(color:--sidebar-foreground)`;
+  const kbd = "pointer-events-none ml-auto font-sans text-xs text-(color:--sidebar-foreground)/50";
+  return (
+    <div className="flex flex-col gap-0.5 px-2" data-testid="nootion-nav">
+      {onNewPage && (
+        <button type="button" onClick={onNewPage} className={row} data-testid="new-page">
+          <SquarePen aria-hidden /> {t("page.new")}
+        </button>
+      )}
+      <button type="button" onClick={onCapture} className={row} data-quick-capture-button>
+        <Inbox aria-hidden /> {t("inbox.capture")}
+        {!touch && <kbd className={kbd}>{captureShortcutLabel()}</kbd>}
+      </button>
+      <NavLink to="/reminders" className={row}>
+        <Bell aria-hidden /> {t("reminders.title")}
+        {due > 0 && (
+          <span className="ml-auto rounded-full bg-[#f0b85a] px-1.5 text-[11px] font-semibold leading-[18px] text-[#0b1c33]" data-reminders-due>
+            {due}
+          </span>
+        )}
+      </NavLink>
+      <NavLink to="/pages" className={row}>
+        <Library aria-hidden /> {t("library.title")}
+      </NavLink>
+      <NavLink to="/graph" className={row}>
+        <Waypoints aria-hidden /> {t("graph.title")}
+      </NavLink>
+    </div>
+  );
+}
+
 export function AppShell() {
   const { user, refresh } = useSession();
   const wrise = useWriseMe();
@@ -280,6 +325,18 @@ export function AppShell() {
     navigate("/login", { replace: true });
   }
 
+  // Notion's "New page": a page in the Personal space (DEM-1446).
+  const personal = workspaces.data?.find((w) => w.kind === "personal");
+  const refreshPages = useRefreshPages();
+  async function newPage() {
+    const res = await api<{ page: PageSummary }>("/pages", {
+      method: "POST",
+      body: { workspaceId: personal!.id, parentId: null, title: "" },
+    });
+    await refreshPages();
+    navigate(`/page/${res.page.id}`);
+  }
+
   const syncLinks = useDesktopSync().data;
   const syncError = syncLinks?.find((l) => l.lastError)?.lastError;
 
@@ -292,6 +349,7 @@ export function AppShell() {
         <SyncStatus className="mx-3 w-fit" />
         <SearchBox onClick={() => setSearching(true)} />
         <WiseTabs />
+        <NootionNav onCapture={() => setCapturing(true)} onNewPage={personal ? newPage : undefined} />
       </div>
       <nav className="relative isolate flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
         <SlideIndicator />
@@ -359,20 +417,42 @@ function SectionHeader({
   icon,
   label,
   children,
+  open,
+  onToggle,
 }: {
   icon: React.ReactNode;
   label: string;
   children?: React.ReactNode;
+  /** A space folds like a Notion section: the name opens and closes it (DEM-1446). */
+  open?: boolean;
+  onToggle?: () => void;
 }) {
+  const name = (
+    <>
+      {icon}
+      <span className="truncate">{label}</span>
+      {onToggle && <ChevronRight size={12} aria-hidden className={`shrink-0 transition-transform duration-150 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} />}
+    </>
+  );
+  const nameClass = "flex min-w-0 items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-neutral-500";
   return (
     <div className="group flex items-center justify-between px-2 pb-1">
-      <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-neutral-500">
-        {icon}
-        <span className="truncate">{label}</span>
-      </span>
+      {onToggle ? (
+        <button type="button" onClick={onToggle} aria-expanded={open} className={`${nameClass} rounded-sm outline-none hover:text-(color:--sidebar-accent-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring)`} data-space-toggle>
+          {name}
+        </button>
+      ) : (
+        <span className={nameClass}>{name}</span>
+      )}
       <span className="flex items-center gap-0.5">{children}</span>
     </div>
   );
+}
+
+// Spaces folded in the sidebar, per browser (DEM-1446).
+const FOLDED_KEY = "wrise-folded-spaces";
+function readFolded(): string[] {
+  try { const v = JSON.parse(localStorage.getItem(FOLDED_KEY) ?? "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
 }
 
 function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
@@ -380,6 +460,12 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
   const navigate = useNavigate();
   const refresh = useRefreshPages();
   const canEdit = workspace.role === "owner" || workspace.role === "editor";
+  const [open, setOpen] = useState(() => !readFolded().includes(workspace.id));
+  function toggle() {
+    setOpen(!open);
+    const rest = readFolded().filter((id) => id !== workspace.id);
+    try { localStorage.setItem(FOLDED_KEY, JSON.stringify(open ? [...rest, workspace.id] : rest)); } catch { /* private window: folds for this visit only */ }
+  }
 
   async function addPage() {
     const res = await api<{ page: PageSummary }>("/pages", {
@@ -403,6 +489,8 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
           )
         }
         label={workspaceName(workspace)}
+        open={open}
+        onToggle={toggle}
       >
         {workspace.kind === "shared" && (
           <Link
@@ -427,7 +515,7 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
           </button>
         )}
       </SectionHeader>
-      {pages.data && (
+      {open && pages.data && (
         <PageTree
           nodes={buildTree(pages.data)}
           all={pages.data}

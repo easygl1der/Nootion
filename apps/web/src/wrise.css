@@ -21,8 +21,7 @@
   --color-blue-500: #2f6197; --color-blue-600: #1e4a7a; --color-blue-700: #17395f; --color-blue-800: #112c4a; --color-blue-900: #0b1c33;
   /* ambers (highlights, warnings) -> Wrise gold */
   --color-amber-100: #fdf1d9; --color-amber-200: #fae3b4; --color-amber-300: #f6cf86; --color-amber-400: #f3c46f; --color-amber-500: #f0b85a; --color-amber-600: #cf9533;
-  /* radii: portal --radius-lg 0.6875rem */
-  --radius-xs: 0.25rem; --radius-sm: 0.375rem; --radius-md: 0.5rem; --radius-lg: 0.6875rem; --radius-xl: 0.9rem; --radius-2xl: 1.1rem;
+  /* radii: Nootion's own (Tailwind's) in the page body; only colours are Wrise there (DEM-1446, Yihua 2026-11-14 "主区 mostly like nootion") */
   --wrise-navy: #0b1c33; --wrise-gold: #f0b85a;
 }
 .dark {
@@ -81,7 +80,6 @@ button[type="submit"]:hover { background: #17395f !important; }
 input:focus { border-color: #f0b85a !important; box-shadow: 0 0 0 3px rgba(240, 184, 90, 0.25) !important; outline: none; }
 
 /* ---- page + database ---- */
-h1 { letter-spacing: -0.01em; }
 table th { background: #f6f9fd; }
 
 /* prefers-reduced-motion: the portal cuts every animation and transition to 1 ms (global.css, DEM-1298); the rail does the same here */
@@ -89,5 +87,5 @@ table th { background: #f6f9fd; }
   aside[aria-label="Sidebar"] *, aside[aria-label="Sidebar"] *::before, aside[aria-label="Sidebar"] *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
 }
 
-/* the rail parts (header, footer) use the portal's Tailwind radii: rounded-sm 4px, md 6px, lg 8px (the page body keeps the larger Wrise radii above) */
+/* the rail parts (header, footer) use the portal's Tailwind radii: rounded-sm 4px, md 6px, lg 8px (the page body keeps Nootion's own) */
 .wrise-rail { --radius-sm: 0.25rem; --radius-md: 0.375rem; --radius-lg: 0.5rem; }
