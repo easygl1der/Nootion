@@ -29,7 +29,22 @@ export function DatabaseBlockView({ node, extension }: NodeViewProps) {
 
 function Heading({ title, to }: { title: string; to?: string }) {
   const text = `🗃 ${pageTitle(title)}`;
-  return <div className="mb-1 text-lg font-semibold">{to ? <Link to={to} className="hover:underline">{text}</Link> : text}</div>;
+  if (!to) return <div className="mb-1 text-lg font-semibold">{text}</div>;
+  // Readers get the same open-as-full-page button as editors (DEM-1447).
+  return (
+    <div className="mb-1 flex items-center gap-1 text-lg font-semibold">
+      <Link to={to} className="min-w-0 truncate hover:underline">{text}</Link>
+      <OpenFull to={to} />
+    </div>
+  );
+}
+
+function OpenFull({ to }: { to: string }) {
+  return (
+    <Link to={to} title={t("database.openFull")} aria-label={t("database.openFull")} className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800">
+      <ExternalLink size={16} />
+    </Link>
+  );
 }
 
 function LiveDatabase({ id }: { id: string }) {
@@ -63,9 +78,7 @@ function EditableHeading({ data }: { data: DatabaseData }) {
         aria-label={t("database.titleLabel")}
         className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-neutral-400"
       />
-      <Link to={`/page/${data.id}`} title={t("database.openFull")} className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800">
-        <ExternalLink size={16} />
-      </Link>
+      <OpenFull to={`/page/${data.id}`} />
     </div>
   );
 }

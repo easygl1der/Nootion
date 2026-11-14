@@ -488,6 +488,8 @@ export const fr: Messages = {
   "database.defaultTags": "Étiquettes",
   "database.defaultTitle": "Nom",
   "database.notFound": "Base de données introuvable ou non partagée.",
+  "database.collapse": "Revenir à la page",
+  "database.expand": "Plein écran",
   "database.openFull": "Ouvrir en pleine page",
   "database.private": "Base de données privée",
   "database.titleLabel": "Titre de la base de données",
