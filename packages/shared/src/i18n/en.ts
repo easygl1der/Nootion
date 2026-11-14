@@ -486,6 +486,8 @@ export const en = {
   "database.defaultTags": "Tags",
   "database.defaultTitle": "Name",
   "database.notFound": "Database not found or not shared.",
+  "database.collapse": "Back to the page",
+  "database.expand": "Full screen",
   "database.openFull": "Open as full page",
   "database.private": "Private database",
   "database.titleLabel": "Database title",

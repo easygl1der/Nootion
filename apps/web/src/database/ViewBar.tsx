@@ -20,6 +20,8 @@ import {
   Upload,
   X,
   Zap,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   t,
@@ -81,12 +83,17 @@ export function ViewBar({
   onSelect,
   actions,
   editable,
+  expanded,
+  onExpand,
 }: {
   data: DatabaseData;
   view: DatabaseViewInfo;
   onSelect: (viewId: string) => void;
   actions?: Actions;
   editable: boolean;
+  /** The view fills the whole window (DEM-1447); absent on public pages. */
+  expanded?: boolean;
+  onExpand?: (on: boolean) => void;
 }) {
   const [menu, setMenu] = useState<{ kind: "view" | "add" | "filter" | "sort" | "group" | "date" | "props" | "more" | "templates"; anchor: HTMLElement } | null>(null);
   const close = () => setMenu(null);
@@ -161,6 +168,18 @@ export function ViewBar({
           <button aria-label={t("view.exportImport")} className={tool(false)} onClick={(e) => setMenu({ kind: "more", anchor: e.currentTarget })}>
             <MoreHorizontal size={16} />
           </button>
+          {onExpand && (
+            <button
+              className={tool(!!expanded)}
+              onClick={() => onExpand(!expanded)}
+              title={expanded ? `${t("database.collapse")} (Esc)` : t("database.expand")}
+              aria-pressed={!!expanded}
+              data-db-expand
+            >
+              {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              <span className="hidden sm:inline">{expanded ? t("database.collapse") : t("database.expand")}</span>
+            </button>
+          )}
         </div>
       )}
       {menu?.kind === "templates" && <TemplatesMenu data={data} anchor={menu.anchor} onClose={close} />}

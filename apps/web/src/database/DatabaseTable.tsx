@@ -1,4 +1,5 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { ChevronDown, ChevronRight, GripVertical, Maximize2, Plus, Trash2 } from "lucide-react";
 import {
@@ -80,9 +81,26 @@ export function DatabaseViews(props: ViewProps) {
   const me = useSession().user?.id ?? null;
   const ctx: ViewContext = useMemo(() => ({ ...data, me }), [data, me]);
   const rows = useMemo(() => applyView(ctx, view?.config ?? {}), [ctx, view?.config]);
-  return (
-    <div>
-      {view && <ViewBar data={data} view={view} onSelect={select} actions={actions} editable={editable} />}
+  // Full screen, like Notion's expanded database (DEM-1447): only this viewer's screen, nothing is saved.
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      // A popover or a cell editor handles its own Escape first.
+      const el = e.target as HTMLElement | null;
+      if (e.key !== "Escape" || e.defaultPrevented || el?.closest("input, textarea, select, [contenteditable=true]")) return;
+      setExpanded(false);
+    };
+    // window, not document: Popover's document listener runs first and marks the event handled.
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
+  const body = (
+    <>
+      {expanded && <div className="mb-2 truncate text-lg font-semibold">🗃 {pageTitle(data.title)}</div>}
+      {view && (
+        <ViewBar data={data} view={view} onSelect={select} actions={actions} editable={editable} expanded={expanded} onExpand={actions ? setExpanded : undefined} />
+      )}
       {view?.type === "board" ? (
         <div className="pt-2">
           <BoardView {...props} view={view} ctx={ctx} rows={rows} editable={editable} />
@@ -106,7 +124,21 @@ export function DatabaseViews(props: ViewProps) {
       ) : (
         <TableView {...props} view={view} ctx={ctx} rows={rows} />
       )}
-    </div>
+    </>
+  );
+  if (!expanded) return <div>{body}</div>;
+  // On body, above the sidebar (z-50, earlier in the DOM); popovers opened later still sit on top.
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal
+      aria-label={pageTitle(data.title)}
+      data-db-expanded
+      className="fixed inset-0 z-50 overflow-auto bg-white px-5 py-4 text-neutral-800 sm:px-12 dark:bg-neutral-950 dark:text-neutral-100"
+    >
+      {body}
+    </div>,
+    document.body,
   );
 }
 
