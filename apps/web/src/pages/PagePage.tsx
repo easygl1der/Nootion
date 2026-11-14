@@ -123,7 +123,8 @@ function PageView({ page }: { page: PageDetail }) {
   }
 
   return (
-    <div>
+    // The comments panel docks like the Wrise right panel on wide screens: the page makes room instead of being covered (DEM-1392).
+    <div className={`transition-[padding] duration-300 ease-out motion-reduce:transition-none ${hasComments && commentsOpen ? "lg:pr-96" : ""}`}>
       <header className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm max-md:sticky max-md:top-0 max-md:z-30 max-md:border-b max-md:border-neutral-200 max-md:bg-white/95 max-md:backdrop-blur sm:gap-4 md:px-4 md:py-2 dark:max-md:border-neutral-800 dark:max-md:bg-neutral-900/95">
         <nav className="flex min-w-0 items-center gap-1 text-neutral-500">
           <MenuButton />

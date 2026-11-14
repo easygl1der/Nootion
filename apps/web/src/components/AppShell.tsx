@@ -26,6 +26,9 @@ import {
   FileText,
   Calendar,
   ChevronsUpDown,
+  BadgeCheck,
+  Bell,
+  Info,
   Home,
   Mail,
   MessageCircle,
@@ -63,6 +66,7 @@ import { SyncStatus } from "./SyncStatus";
 import { useLiveEvents } from "../lib/live";
 import { pageIcon } from "../lib/icons";
 import { syncErrorText, useDesktopSync } from "../pages/SyncPage";
+import { useWriseMe, writeAvatar, writeLogout, writeRole, writeSettings, type WriseMe } from "../lib/wrise";
 
 // Official Wrise files (apps/web/public): the wordmark, and the mark when the sidebar is put away.
 // The Wrise rail's brand row (portal: sidebar-logo.tsx in SidebarHeader): the official logo, "v<version>" under it.
@@ -105,10 +109,13 @@ const RAIL_BTN = "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 
 const MENU_ITEM = "flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-[#122033] outline-none hover:bg-[#eef3f9] focus-visible:bg-[#eef3f9] dark:text-[#f6f9fd] dark:hover:bg-[#16283b] dark:focus-visible:bg-[#16283b]";
 
 // The rail's account block (portal: nav-user.tsx): avatar, name, role, chevron; the chevron opens the account menu.
-function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, syncError }: {
-  onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
+// DEM-1392: with the portal there (wriseai.com/notes) it is the portal's account: its name, role, picture and menu (Account, Notifications, Settings
+// open the portal's Settings; Log out ends both). Notes keeps only what is its own: Trash, Administration for its admin, Sync, and the source link.
+function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncLinks, syncError }: {
+  wrise: WriseMe | null; onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
 }) {
   const { user } = useSession();
+  const [noPhoto, setNoPhoto] = useState(false);
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<React.CSSProperties>({});
@@ -128,12 +135,14 @@ function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, s
     window.addEventListener("keydown", key); window.addEventListener("mousedown", down);
     return () => { window.removeEventListener("keydown", key); window.removeEventListener("mousedown", down); };
   }, [open]);
-  const name = user?.name ?? "";
-  const role = (user?.role ?? "").replace(/^./, (c) => c.toUpperCase());
+  const name = wrise?.displayName ?? user?.name ?? "";
+  const role = wrise ? writeRole(wrise.role) : (user?.role ?? "").replace(/^./, (c) => c.toUpperCase());
+  const photo = wrise ? (noPhoto ? null : writeAvatar(wrise.userId)) : user?.avatarUrl;
   const go = (to: string) => { setOpen(false); navigate(to); };
+  const settings = (section?: string) => { setOpen(false); writeSettings(section); };
   const face = (size: string) => (
-    user?.avatarUrl
-      ? <img src={user.avatarUrl} alt="" className={`${size} shrink-0 rounded-lg object-cover`} />
+    photo
+      ? <img src={photo} alt="" data-no-base={wrise ? "" : undefined} onError={() => setNoPhoto(true)} className={`${size} shrink-0 rounded-lg object-cover`} />
       : <span className={`${size} flex shrink-0 items-center justify-center rounded-lg bg-[#f6f9fd] text-xs font-medium text-[#122033]`}>
           {name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("") || "?"}
         </span>
@@ -158,7 +167,16 @@ function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, s
             <div className="grid flex-1 leading-tight"><span className="truncate font-medium">{name}</span><span className="truncate text-xs text-[#64748b]">{role}</span></div>
           </div>
           <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
-          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/account")}><User size={16} /> {t("account.title")}</button>
+          {wrise ? (
+            <>
+              <button role="menuitem" className={MENU_ITEM} onClick={() => settings("accounts")}><BadgeCheck size={16} /> Account</button>
+              <button role="menuitem" className={MENU_ITEM} onClick={() => settings("notifications")}><Bell size={16} /> Notifications</button>
+              <button role="menuitem" className={MENU_ITEM} onClick={() => settings()}><Settings size={16} /> Settings</button>
+              <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
+            </>
+          ) : (
+            <button role="menuitem" className={MENU_ITEM} onClick={() => go("/account")}><User size={16} /> {t("account.title")}</button>
+          )}
           {admin && (
             <button role="menuitem" className={MENU_ITEM} onClick={() => go("/admin")}>
               <Settings size={16} /> {t("admin.title")}
@@ -172,8 +190,15 @@ function NavUserBlock({ onLogout, admin, updateWarning, updateText, syncLinks, s
               {syncError && <span className="ml-auto text-amber-500" title={syncErrorText(syncError)} data-sync-warning><AlertTriangle size={14} aria-label={syncErrorText(syncError)} /></span>}
             </button>
           )}
+          {import.meta.env.VITE_SOURCE_URL && (
+            // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293), so everyone who uses it is offered its source, here on every page
+            // (Yihua 2026-11-14, DEM-1392: not as a line in the sidebar). The portal's docs page "Open-source software" says the same.
+            <a role="menuitem" href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className={MENU_ITEM} data-wrise-source onClick={() => setOpen(false)}>
+              <Info size={16} /> About Notes · Source code (AGPL-3.0)
+            </a>
+          )}
           <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
-          <button role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); onLogout(); }}><LogOut size={16} /> {t("auth.logout")}</button>
+          <button role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); onLogout(); }}><LogOut size={16} /> {wrise ? "Log out" : t("auth.logout")}</button>
         </div>, document.body)}
     </>
   );
@@ -216,7 +241,10 @@ function WiseTabs() {
 
 export function AppShell() {
   const { user, refresh } = useSession();
-  const version = useVersion();
+  const wrise = useWriseMe();
+  // The portal's version when Notes runs inside it (DEM-1392), Nootion's own otherwise.
+  const nootionVersion = useVersion();
+  const version = wrise ? (wrise.version ?? null) : nootionVersion;
   const update = useUpdateStatus(user?.role === "admin").data;
   const updateWarning = !!update?.available && !update.dismissed;
   const navigate = useNavigate();
@@ -253,6 +281,8 @@ export function AppShell() {
     }
     // Nothing of this account stays on the device.
     await clearOfflineData();
+    // Inside the portal: out of Wrise too, and to its login page (DEM-1392).
+    if (wrise) return writeLogout();
     await refresh();
     navigate("/login", { replace: true });
   }
@@ -284,10 +314,18 @@ export function AppShell() {
         </button>
       </nav>
       <div className="wrise-rail flex flex-col gap-2 p-2">
-        <NavLink to="/account" className={`${RAIL_BTN} h-8`} data-testid="settings-row">
-          <Settings aria-hidden /> Settings
-        </NavLink>
+        {/* One Settings: the portal's dialog when Notes runs inside it (DEM-1392), Nootion's account page otherwise. */}
+        {wrise ? (
+          <button type="button" onClick={() => writeSettings()} className={`${RAIL_BTN} h-8`} data-testid="settings-row">
+            <Settings aria-hidden /> Settings
+          </button>
+        ) : (
+          <NavLink to="/account" className={`${RAIL_BTN} h-8`} data-testid="settings-row">
+            <Settings aria-hidden /> Settings
+          </NavLink>
+        )}
         <NavUserBlock
+          wrise={wrise}
           onLogout={logout}
           admin={user?.role === "admin"}
           updateWarning={updateWarning}
@@ -295,12 +333,6 @@ export function AppShell() {
           syncLinks={!!syncLinks}
           syncError={syncError}
         />
-        {import.meta.env.VITE_SOURCE_URL && (
-          // AGPL-3.0 section 13: this copy is modified (wrise fork, DEM-1293); its source is offered to everyone who uses it.
-          <a href={import.meta.env.VITE_SOURCE_URL} target="_blank" rel="noopener noreferrer" className="block px-2 text-[11px] leading-tight text-(color:--sidebar-foreground)/60 hover:underline" data-wrise-source>
-            Based on Nootion · Source code (AGPL-3.0, modified)
-          </a>
-        )}
       </div>
     </>
   );

@@ -47,24 +47,29 @@ export function CommentsPanel({
   }, [active, threads.data]);
 
   return (
+    // The Wrise right panel (portal components/right-panel.tsx, DEM-970 / DEM-1392): one panel, a 48 px row of tabs along the top under a border,
+    // the open tab on the muted background; a border on the left instead of a shadow. Comments is its only tab here.
     <aside
       aria-label={t("comments.title")}
-      className="nt-pop fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-neutral-200 bg-white shadow-xl sm:w-96 dark:border-neutral-800 dark:bg-neutral-900"
+      className="nt-pop fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-neutral-200 bg-white sm:w-96 max-lg:shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
       data-comments-panel
     >
-      <header className="flex items-center gap-2 border-b border-neutral-200 px-4 py-2.5 dark:border-neutral-800">
-        <MessageSquare size={16} className="text-neutral-500" />
-        <h2 className="flex-1 font-semibold">{t("comments.title")}</h2>
-        {resolvedCount > 0 && (
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-neutral-500">
-            <input type="checkbox" className="h-3.5 w-3.5 accent-blue-600" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} />
-            {t("comments.showResolved", { count: resolvedCount })}
-          </label>
-        )}
-        <button onClick={onClose} className="rounded p-1 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label={t("common.close")}>
+      <header className="flex h-12 shrink-0 items-center gap-1 border-b border-neutral-200 pr-2 pl-2 dark:border-neutral-800" data-panel-tabs>
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-md bg-neutral-50 px-2.5 text-[0.8rem] font-medium text-neutral-800 dark:bg-neutral-800 dark:text-neutral-100">
+          <MessageSquare size={14} aria-hidden />
+          {t("comments.title")}
+        </span>
+        <span className="flex-1" />
+        <button onClick={onClose} className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800" aria-label={t("common.close")}>
           <X size={16} />
         </button>
       </header>
+      {resolvedCount > 0 && (
+        <label className="flex cursor-pointer items-center gap-1.5 border-b border-neutral-200 px-4 py-2 text-xs text-neutral-500 dark:border-neutral-800">
+          <input type="checkbox" className="h-3.5 w-3.5 accent-blue-600" checked={showResolved} onChange={(e) => setShowResolved(e.target.checked)} />
+          {t("comments.showResolved", { count: resolvedCount })}
+        </label>
+      )}
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {draft && canComment && (
           <div className="nt-pop rounded-lg border border-blue-300 p-3 dark:border-blue-800" data-comment-draft>
