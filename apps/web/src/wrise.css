@@ -48,6 +48,8 @@ aside[aria-label="Sidebar"] {
    2px gold line, 8px clear top and bottom; SlideIndicator (components/SlideIndicator.tsx) slides it between rows. Before it lands,
    the row draws the same block itself. Hover .05 and press 0.98, 100 ms; the gold ring only for the keyboard. */
 aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a { position: relative; outline: none; transition: background-color 100ms ease-out, color 100ms ease-out, transform 100ms ease-out; }
+/* the page rows start 8px in, as the portal rows, so the gold line clears the icon */
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] li a[href*="/page/"] { padding-left: 8px; }
 aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
 aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a:active { transform: scale(0.98); }
 aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a:focus-visible { outline: 2px solid #f0b85a; outline-offset: -2px; }
