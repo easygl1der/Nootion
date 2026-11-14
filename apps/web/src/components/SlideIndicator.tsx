@@ -16,6 +16,7 @@ export function SlideIndicator() {
     const host = ind?.parentElement;
     if (!ind || !host) return;
     let last: Element | null = null;
+    let slideEnd = 0; // while a slide runs, a layout shift retargets it instead of snapping it
     const pick = () => Array.from(host.querySelectorAll(SELECTED_ROW)).find((el) => el.getClientRects().length > 0) ?? null;
     const place = (animate: boolean) => {
       const on = pick();
@@ -25,6 +26,7 @@ export function SlideIndicator() {
       const h = host.getBoundingClientRect();
       const r = on.getBoundingClientRect();
       if (!animate || !last) ind.style.transition = "none";
+      else slideEnd = performance.now() + 240;
       ind.style.transform = `translate(${r.left - h.left + host.scrollLeft}px, ${r.top - h.top + host.scrollTop}px)`;
       ind.style.width = `${r.width}px`;
       ind.style.height = `${r.height}px`;
@@ -33,7 +35,7 @@ export function SlideIndicator() {
     };
     place(false);
     // only a new selected row slides; layout shifts reach the ResizeObserver and land in place
-    const resized = new ResizeObserver(() => place(false));
+    const resized = new ResizeObserver(() => place(performance.now() < slideEnd));
     const watch = () => { resized.observe(host); for (const child of Array.from(host.children)) resized.observe(child); };
     const changed = new MutationObserver(() => {
       watch(); // sections that render later (workspaces load) are watched too
