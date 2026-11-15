@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { createPortal } from "react-dom";
 
 /** Floating panel anchored under an element. Closes on outside click and Escape. */
-export function Popover({ anchor, onClose, children, width: wanted = 260 }: { anchor: HTMLElement | null; onClose: () => void; children: ReactNode; width?: number }) {
+/** `menu`: the portal's DropdownMenu surface (DEM-1512): hairline ring instead of a border, a softer shadow. */
+export function Popover({ anchor, onClose, children, width: wanted = 260, menu }: { anchor: HTMLElement | null; onClose: () => void; children: ReactNode; width?: number; menu?: boolean }) {
   // Never wider than a phone screen.
   const width = Math.min(wanted, window.innerWidth - 16);
   const ref = useRef<HTMLDivElement>(null);
@@ -38,7 +39,7 @@ export function Popover({ anchor, onClose, children, width: wanted = 260 }: { an
     <div
       ref={ref}
       style={{ left: pos?.left ?? -9999, top: pos?.top ?? -9999, width }}
-      className="nt-pop fixed z-50 max-h-[calc(100dvh-16px)] overflow-y-auto rounded-lg border border-neutral-200 bg-white p-1 text-sm shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+      className={`nt-pop fixed z-50 max-h-[calc(100dvh-16px)] overflow-y-auto rounded-lg bg-white p-1 text-sm dark:bg-neutral-900 ${menu ? "wrise-menu" : "border border-neutral-200 shadow-xl dark:border-neutral-700"}`}
     >
       {children}
     </div>,

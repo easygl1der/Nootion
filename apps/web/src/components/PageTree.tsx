@@ -8,6 +8,7 @@ import { pageTitle, type TreeNode } from "../lib/tree";
 import { t } from "@nootion/shared";
 import { PageMenu, type MenuAnchor } from "./PageMenu";
 import { pageIcon } from "../lib/icons";
+import { Tip } from "./ui";
 
 export const DRAG_TYPE = "application/x-nootion-page";
 
@@ -149,20 +150,26 @@ function PageTreeItem({ node, depth, workspaceId, editable, all }: TreeProps & {
           <span className="truncate">{pageTitle(page.title)}</span>
         </NavLink>
         )}
-        <span className={`shrink-0 items-center group-hover:flex touch:flex ${menu ? "flex" : "hidden"}`}>
-          <button
-            className="rounded p-1 text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800"
-            onClick={(e) => setMenu(e.currentTarget)}
-            title={t("page.options")}
-            aria-label={t("page.options")}
-            aria-haspopup="menu"
-          >
-            <MoreHorizontal size={14} />
-          </button>
-          {editable && (
-            <button className="rounded p-1 text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800" onClick={addChild} title={t("tree.addSubpage")}>
-              <Plus size={14} />
+        <span className={`shrink-0 items-center gap-0.5 pl-0.5 group-hover:flex group-focus-within:flex touch:flex ${menu ? "flex" : "hidden"}`}>
+          {/* DEM-1512: the portal's row action (SidebarMenuAction + the DEM-1426 slide), wrise.css .wrise-row-action */}
+          <Tip label={t("page.options")}>
+            <button
+              type="button"
+              className="wrise-row-action flex"
+              onClick={(e) => setMenu(menu ? null : e.currentTarget)}
+              aria-label={t("page.options")}
+              aria-haspopup="menu"
+              aria-expanded={!!menu}
+            >
+              <MoreHorizontal size={16} />
             </button>
+          </Tip>
+          {editable && (
+            <Tip label={t("tree.addSubpage")}>
+              <button type="button" className="wrise-row-action flex" onClick={addChild} aria-label={t("tree.addSubpage")}>
+                <Plus size={16} />
+              </button>
+            </Tip>
           )}
         </span>
       </div>

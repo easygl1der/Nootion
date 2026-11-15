@@ -59,7 +59,7 @@ import { DRAG_TYPE, PageTree } from "./PageTree";
 import { SlideIndicator } from "./SlideIndicator";
 import { Item } from "./PageMenu";
 import { Popover } from "../database/Popover";
-import { Button, CancelButton, ErrorText, Field, Modal } from "./ui";
+import { Button, CancelButton, ErrorText, Field, Modal, Tip } from "./ui";
 import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
 import {
@@ -495,7 +495,7 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   // DEM-1495 (Ledger): one "+" and one named "…" menu per space, instead of three bare icons
   const iconBtn =
-    "flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-(--sidebar-ring)";
+    "wrise-row-action flex"; // DEM-1512: the same 20px action as a page row (wrise.css)
   return (
     <div>
       <SectionHeader
@@ -510,25 +510,28 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
         open={open}
         onToggle={toggle}
       >
-        <button
-          type="button"
-          onClick={(e) => setMenu(menu ? null : e.currentTarget)}
-          className={iconBtn}
-          title={t("workspace.options")}
-          aria-label={t("workspace.options")}
-          aria-haspopup="menu"
-          aria-expanded={!!menu}
-          data-space-menu
-        >
-          <MoreHorizontal size={14} />
-        </button>
-        {canEdit && (
-          <button type="button" onClick={addPage} className={iconBtn} title={t("page.new")} aria-label={t("page.new")}>
-            <Plus size={14} />
+        <Tip label={t("workspace.options")}>
+          <button
+            type="button"
+            onClick={(e) => setMenu(menu ? null : e.currentTarget)}
+            className={iconBtn}
+            aria-label={t("workspace.options")}
+            aria-haspopup="menu"
+            aria-expanded={!!menu}
+            data-space-menu
+          >
+            <MoreHorizontal size={16} />
           </button>
+        </Tip>
+        {canEdit && (
+          <Tip label={t("page.new")}>
+            <button type="button" onClick={addPage} className={iconBtn} aria-label={t("page.new")}>
+              <Plus size={16} />
+            </button>
+          </Tip>
         )}
         {menu && (
-          <Popover anchor={menu} onClose={() => setMenu(null)} width={320}>
+          <Popover anchor={menu} onClose={() => setMenu(null)} width={320} menu>
             <div role="menu" className="p-1 text-sm">
               <Item icon={<Download size={15} />} onClick={() => { setMenu(null); location.assign(withBase(`/api/workspaces/${workspace.id}/export`)); }}>
                 {t("workspace.export")}
@@ -649,14 +652,16 @@ function FavoritesSection() {
               </span>
               <span className="truncate">{pageTitle(page.title)}</span>
             </NavLink>
-            <button
-              className="hidden shrink-0 rounded p-1 text-neutral-500 hover:bg-neutral-200 group-hover:block touch:block dark:hover:bg-neutral-800"
-              onClick={() => unstar(page.id)}
-              title={t("favorites.remove")}
-              aria-label={t("favorites.remove")}
-            >
-              <X size={14} />
-            </button>
+            <Tip label={t("favorites.remove")}>
+              <button
+                type="button"
+                className="wrise-row-action hidden group-hover:flex group-focus-within:flex touch:flex"
+                onClick={() => unstar(page.id)}
+                aria-label={t("favorites.remove")}
+              >
+                <X size={16} />
+              </button>
+            </Tip>
           </div>
         );
       })}

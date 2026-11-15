@@ -8,7 +8,7 @@ import { sendOrQueue } from "../lib/offline";
 import { keys, useFavorites, usePage, useRefreshPages } from "../lib/queries";
 import { pageRoleLabel } from "../lib/labels";
 import { pageTitle } from "../lib/tree";
-import { Button } from "../components/ui";
+import { Button, Tip } from "../components/ui";
 import { ShareDialog } from "../components/ShareDialog";
 import { EditedAt } from "../components/EditedAt";
 import { HistoryDialog } from "../components/HistoryDialog";
@@ -165,9 +165,11 @@ function PageView({ page }: { page: PageDetail }) {
             </Button>
           )}
           {!page.home && <FavoriteButton page={page} />}
-          <Button variant="ghost" onClick={(e) => setMenu(e.currentTarget)} title={t("page.options")} aria-label={t("page.options")}>
-            <MoreHorizontal size={16} />
-          </Button>
+          <Tip label={t("page.options")}>
+            <Button variant="ghost" onClick={(e) => setMenu(menu ? null : e.currentTarget)} aria-label={t("page.options")} aria-haspopup="menu" aria-expanded={!!menu}>
+              <MoreHorizontal size={16} />
+            </Button>
+          </Tip>
           {!canManage && (
             <span
               title={pageRoleLabel(page.role)}

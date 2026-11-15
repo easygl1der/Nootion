@@ -123,3 +123,41 @@ aside[aria-label="Sidebar"] [data-space-header] { border-color: rgba(255, 255, 2
   [data-title-block] [data-add-cover] { opacity: 0; transition: opacity 150ms ease-out; }
   [data-title-block]:hover [data-add-cover], [data-title-block]:focus-within [data-add-cover] { opacity: 1; }
 }
+
+/* ---- DEM-1512: the "…" and "+" on a page row and a space header, their menu and tooltip, as the portal's ----
+   button = SidebarMenuAction (20px, rounded-md, sidebar-foreground; the hover fill slides in from the left as the DEM-1426 Button,
+   220 ms, and stays while its menu is open); the gold ring only for the keyboard, never after a click or on an open menu. */
+aside[aria-label="Sidebar"] .wrise-row-action {
+  position: relative; isolation: isolate; width: 20px; height: 20px; flex-shrink: 0; align-items: center; justify-content: center;
+  border-radius: 6px; color: #a7b8c8; outline: none; cursor: pointer; transition: color 100ms ease-out, transform 100ms ease-out;
+}
+aside[aria-label="Sidebar"] .wrise-row-action::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: rgba(255, 255, 255, 0.1);
+  transform: scaleX(0); transform-origin: right; transition: transform 220ms cubic-bezier(.4, 0, .2, 1); pointer-events: none;
+}
+aside[aria-label="Sidebar"] .wrise-row-action:hover, aside[aria-label="Sidebar"] .wrise-row-action[aria-expanded="true"] { color: #fff; }
+aside[aria-label="Sidebar"] .wrise-row-action:hover::before, aside[aria-label="Sidebar"] .wrise-row-action[aria-expanded="true"]::before { transform: scaleX(1); transform-origin: left; }
+aside[aria-label="Sidebar"] .wrise-row-action:active { transform: scale(0.94); }
+/* a finger needs more than 20px */
+@media (hover: none) and (pointer: coarse) { aside[aria-label="Sidebar"] .wrise-row-action { width: 28px; height: 28px; } }
+aside[aria-label="Sidebar"] .wrise-row-action:focus-visible:not([aria-expanded="true"]) { box-shadow: 0 0 0 2px #f0b85a; }
+/* menu = DropdownMenuContent: a hairline ring for the border, shadow-md */
+.wrise-menu { box-shadow: 0 0 0 1px rgb(18 32 51 / 0.08), 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+.dark .wrise-menu { box-shadow: 0 0 0 1px rgb(255 255 255 / 0.1), 0 4px 12px rgb(0 0 0 / 0.4); }
+.wrise-menu .wrise-menu-item { color: #122033; transition: background-color 100ms ease-out; }
+.dark .wrise-menu .wrise-menu-item { color: #f6f9fd; }
+.wrise-menu .wrise-menu-item.text-red-600 { color: #dc2626; }
+.dark .wrise-menu .wrise-menu-item.text-red-600 { color: #f87171; }
+/* tooltip = the portal's (bg-foreground, text-xs, rounded-md, fade + zoom 150 ms) */
+.wrise-tip {
+  position: fixed; z-index: 60; transform: translate(-50%, -100%); max-width: 20rem; padding: 6px 10px; border-radius: 6px;
+  background: #122033; color: #f6f9fd; font-size: 12px; line-height: 16px; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12), 0 4px 12px rgb(0 0 0 / 0.25); /* the hairline keeps it apart from the navy rail */
+  animation: wrise-tip-in 150ms ease-out;
+}
+.dark .wrise-tip { background: #f6f9fd; color: #122033; }
+@keyframes wrise-tip-in { from { opacity: 0; transform: translate(-50%, -100%) scale(0.95); } }
+@media (prefers-reduced-motion: reduce) {
+  .wrise-tip { animation: none; }
+  aside[aria-label="Sidebar"] .wrise-row-action::before { transition: none; }
+}

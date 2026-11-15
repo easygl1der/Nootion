@@ -27,15 +27,15 @@ export function Item({ icon, children, onClick, danger }: { icon: ReactNode; chi
       type="button"
       role="menuitem"
       onClick={onClick}
-      className={`flex w-full items-center gap-2 whitespace-nowrap rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 ${danger ? "text-red-600 dark:text-red-400" : ""}`}
+      className={`wrise-menu-item flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left outline-none hover:bg-neutral-100 focus-visible:bg-neutral-100 dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800 ${danger ? "text-red-600 hover:bg-red-50 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 dark:focus-visible:bg-red-950/40" : ""}`}
     >
-      <span className="flex w-4 shrink-0 justify-center text-neutral-500">{icon}</span>
+      <span className={`flex w-4 shrink-0 justify-center ${danger ? "" : "text-neutral-500"}`}>{icon}</span>
       {children}
     </button>
   );
 }
 
-export const Separator = () => <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />;
+export const Separator = () => <div className="-mx-1 my-1 h-px bg-neutral-200 dark:bg-neutral-800" />;
 
 /**
  * The menu of a page of the sidebar (right click, or its "…" button): favorites, link, duplicate, rename, move,
@@ -91,35 +91,35 @@ export function PageMenu({
   // Out of the sidebar, whose drawer would hold a fixed dialog inside it.
   if (moving) return createPortal(<MoveDialog page={page} all={all} onClose={onClose} />, document.body);
   return (
-    <Popover anchor={element} onClose={onClose} width={260}>
+    <Popover anchor={element} onClose={onClose} width={224} menu>
+      {/* DEM-1512: the portal's row menu (rail-row-menu.tsx): one group, the trash apart at the end */}
       <div role="menu" aria-label={t("page.options")} data-page-menu>
-        <Item icon={<Star size={15} className={starred ? "fill-amber-400 text-amber-400" : ""} />} onClick={run(toggleFavorite)}>
+        <Item icon={<Star size={16} className={starred ? "fill-amber-400 text-amber-400" : ""} />} onClick={run(toggleFavorite)}>
           {starred ? t("favorites.remove") : t("favorites.add")}
         </Item>
-        <Separator />
-        <Item icon={<Link2 size={15} />} onClick={run(() => copyText(`${location.origin}${BASE}/page/${page.id}`))}>
+        <Item icon={<Link2 size={16} />} onClick={run(() => copyText(`${location.origin}${BASE}/page/${page.id}`))}>
           {t("page.copyLink")}
+        </Item>
+        <Item icon={<ExternalLink size={16} />} onClick={run(() => void window.open(`/page/${page.id}`, "_blank", "noopener"))}>
+          {t("page.openNewTab")}
         </Item>
         {editable && (
           <>
-            <Item icon={<Copy size={15} />} onClick={run(duplicate)}>
+            <Item icon={<Copy size={16} />} onClick={run(duplicate)}>
               {t("page.duplicate")}
             </Item>
-            <Item icon={<Pencil size={15} />} onClick={run(onRename)}>
+            <Item icon={<Pencil size={16} />} onClick={run(onRename)}>
               {t("common.rename")}
             </Item>
-            <Item icon={<CornerUpRight size={15} />} onClick={() => setMoving(true)}>
+            <Item icon={<CornerUpRight size={16} />} onClick={() => setMoving(true)}>
               {t("page.moveTo")}
             </Item>
-            <Item icon={<Trash2 size={15} />} onClick={run(trash)} danger>
+            <Separator />
+            <Item icon={<Trash2 size={16} />} onClick={run(trash)} danger>
               {t("page.trash")}
             </Item>
           </>
         )}
-        <Separator />
-        <Item icon={<ExternalLink size={15} />} onClick={run(() => void window.open(`/page/${page.id}`, "_blank", "noopener"))}>
-          {t("page.openNewTab")}
-        </Item>
       </div>
     </Popover>
   );

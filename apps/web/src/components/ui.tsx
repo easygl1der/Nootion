@@ -1,5 +1,6 @@
 import type React from "react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 import { currentLocale, LOCALE_NAMES, LOCALES, t, type Locale } from "@nootion/shared";
 import { withBase } from "../lib/base";
@@ -153,5 +154,42 @@ export function Rich({ text }: { text: string }) {
     <>
       {text.split(/<b>(.*?)<\/b>/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part))}
     </>
+  );
+}
+
+/**
+ * The portal's tooltip (shadcn Tooltip, DEM-1512) in place of the browser's grey `title`: a dark pill above the control after
+ * 400 ms of hover or keyboard focus. Gone on press and while the control's menu is open, so it never covers the menu.
+ * Hover only on screens with a mouse; the control keeps its aria-label for screen readers.
+ */
+export function Tip({ label, children }: { label: string; children: ReactNode }) {
+  const box = useRef<HTMLSpanElement>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const [at, setAt] = useState<DOMRect | null>(null);
+  const control = () => box.current?.firstElementChild as HTMLElement | null;
+  const hide = () => {
+    window.clearTimeout(timer.current);
+    setAt(null);
+  };
+  const show = (keyboard: boolean) => {
+    const el = control();
+    if (!el || (keyboard ? !el.matches(":focus-visible") : !window.matchMedia?.("(hover: hover)").matches)) return;
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      if (el.isConnected && el.getAttribute("aria-expanded") !== "true") setAt(el.getBoundingClientRect());
+    }, 400);
+  };
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  return (
+    <span ref={box} className="contents" onMouseEnter={() => show(false)} onMouseLeave={hide} onFocus={() => show(true)} onBlur={hide} onPointerDown={hide}>
+      {children}
+      {at &&
+        createPortal(
+          <div role="tooltip" className="wrise-tip" style={{ left: Math.max(8, Math.min(at.left + at.width / 2, window.innerWidth - 8)), top: at.top - 6 }}>
+            {label}
+          </div>,
+          document.body,
+        )}
+    </span>
   );
 }
