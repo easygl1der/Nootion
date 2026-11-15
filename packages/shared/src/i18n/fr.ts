@@ -1721,6 +1721,7 @@ export const fr: Messages = {
   "workspace.new": "Nouvel espace partagé",
   "workspace.newHelp": "Vous pourrez ensuite y ajouter des membres. Toutes les pages de l'espace leur seront visibles selon leur rôle.",
   "workspace.notFound": "Espace introuvable.",
+  "workspace.options": "Options de l’espace",
   "workspace.person": "Personne",
   "workspace.personal": "Espace personnel",
   "workspace.removeMember": "Retirer de l'espace",

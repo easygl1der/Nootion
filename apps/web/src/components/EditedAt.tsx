@@ -47,7 +47,8 @@ export function EditedAt({ pageId, updatedAt }: { pageId: string; updatedAt: str
       data-edited-at
     >
       {justSaved ? (
-        <span className="flex items-center gap-1 animate-[nt-fade-in_200ms_ease-out]">
+        // DEM-1495 (Ledger): Saved is a plain status word in the portal's success colour, not grey text
+        <span className="flex items-center gap-1 font-medium text-emerald-600 animate-[nt-fade-in_200ms_ease-out] dark:text-emerald-400" data-saved>
           <Check size={12} /> {t("page.saved")}
         </span>
       ) : (

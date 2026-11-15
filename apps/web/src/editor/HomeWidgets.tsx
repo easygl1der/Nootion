@@ -1,7 +1,7 @@
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, Clock, Database, FileText, ListChecks, Settings2, Star } from "lucide-react";
 import {
   applyView,
@@ -16,14 +16,14 @@ import {
   type DatabaseRow,
   type DateValue,
   type OptionColor,
+  type PageSummary,
   type RecentPage,
   type ViewContext,
 } from "@nootion/shared";
 import { api } from "../lib/api";
-import { useFavorites } from "../lib/queries";
+import { keys, useFavorites } from "../lib/queries";
 import { useSession } from "../lib/session";
 import { pageTitle } from "../lib/tree";
-import { CoverFill } from "../components/PageCover";
 import { SourcesPanel, useSourceDatabases } from "../database/CalendarBlockView";
 import { OPTION_CLASSES } from "../database/format";
 import { useDatabase, useDatabaseActions, useDatabaseList } from "../database/hooks";
@@ -34,7 +34,7 @@ import { pageIcon } from "../lib/icons";
 export function Widget({ icon, title, tools, children, name }: { icon: ReactNode; title: ReactNode; tools?: ReactNode; children: ReactNode; name: string }) {
   return (
     <NodeViewWrapper className="home-widget my-6" contentEditable={false} data-drag-handle="" data-widget={name}>
-      <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-neutral-500">
+      <div className="mb-2 flex min-h-8 items-center gap-1.5 text-sm font-semibold text-neutral-600 dark:text-neutral-400">
         {icon}
         <span className="min-w-0 truncate">{title}</span>
         <span className="ml-auto flex items-center gap-1">{tools}</span>
@@ -46,7 +46,18 @@ export function Widget({ icon, title, tools, children, name }: { icon: ReactNode
 
 export const tool =
   "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-normal text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-200";
-export const empty = "rounded-lg border border-dashed border-neutral-300 px-3 py-4 text-sm text-neutral-500 dark:border-neutral-700";
+// DEM-1495 (DEM-1449 A · Ledger): an empty widget is a quiet line under a hairline, not a dashed box
+export const empty = "border-t border-neutral-200 px-1 py-3 text-sm text-neutral-500 dark:border-neutral-800";
+/** The one outline button of the widgets (was a small blue button found nowhere else in the portal). */
+export const outlineBtn =
+  "inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-100 active:scale-[.98] dark:border-neutral-300 dark:bg-transparent dark:text-neutral-700 dark:hover:bg-neutral-800";
+/** A widget filter as the portal's dashed pill: "Show · Next 14 days". */
+const pill =
+  "inline-flex h-7 items-center gap-1 rounded-full border border-dashed border-neutral-300 px-2.5 text-xs font-normal text-neutral-600 hover:bg-neutral-100 dark:border-neutral-300 dark:text-neutral-600 dark:hover:bg-neutral-800";
+/** Hairline rows in two columns (one on phones): nothing runs off the edge. */
+const hairList = "grid border-t border-neutral-200 sm:grid-cols-2 sm:gap-x-6 dark:border-neutral-800";
+const hairRow =
+  "group/row flex min-h-9 min-w-0 items-center gap-2 border-b border-neutral-200 px-1 text-sm hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/60";
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
 
 /** Widgets only make sense for a signed-in reader; on public pages they show nothing. */
@@ -64,24 +75,45 @@ export function RecentPagesView({ extension }: NodeViewProps) {
   return (
     <Widget name="recent" icon={<Clock size={14} />} title={t("widget.recent")}>
       {recent.data && !recent.data.length && <p className={empty}>{t("widget.recentEmpty")}</p>}
-      <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
-        {recent.data?.map((p) => (
-          <Link
-            key={p.id}
-            to={`/page/${p.id}`}
-            data-recent={p.id}
-            className="flex w-36 shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
-          >
-            <div className="h-12 bg-neutral-100 dark:bg-neutral-800">{p.cover && <CoverFill cover={p.cover} position={p.coverPosition} />}</div>
-            <div className="-mt-4 flex flex-1 flex-col gap-1 px-3 pb-3">
-              <span className="text-2xl leading-none">{pageIcon(p.icon) ?? (p.kind === "database" ? "🗃" : <FileText size={22} className="text-neutral-400" />)}</span>
-              <span className="line-clamp-2 text-sm font-medium">{pageTitle(p.title)}</span>
-              <span className="mt-auto text-xs text-neutral-400">{shortDate(p.visitedAt)}</span>
-            </div>
-          </Link>
+      <div className={recent.data?.length ? hairList : ""}>
+        {recent.data?.slice(0, 8).map((p) => (
+          <div key={p.id} className={hairRow}>
+            <Link to={`/page/${p.id}`} data-recent={p.id} className="flex min-w-0 flex-1 items-center gap-2 self-stretch">
+              <span className="w-5 shrink-0 text-center">{pageIcon(p.icon) ?? (p.kind === "database" ? "🗃" : <FileText size={15} className="inline text-neutral-400" />)}</span>
+              <span className="truncate">{pageTitle(p.title)}</span>
+            </Link>
+            <StarToggle page={p} />
+            <span className="shrink-0 text-xs text-neutral-400 tabular-nums">{shortDate(p.visitedAt)}</span>
+          </div>
         ))}
       </div>
     </Widget>
+  );
+}
+
+/** A star on hover (always shown when starred, and on touch screens): puts the page into Favorites or takes it out, as the sidebar page menu does. */
+function StarToggle({ page }: { page: RecentPage }) {
+  const favorites = useFavorites();
+  const qc = useQueryClient();
+  const starred = !!favorites.data?.some((f) => f.id === page.id);
+  async function toggle() {
+    qc.setQueryData<PageSummary[]>(keys.favorites, (old = []) => (starred ? old.filter((f) => f.id !== page.id) : [...old, page as unknown as PageSummary]));
+    await api(`/favorites/${page.id}`, { method: starred ? "DELETE" : "PUT" }).catch(() => {});
+    await qc.invalidateQueries({ queryKey: keys.favorites });
+  }
+  const label = t(starred ? "favorites.remove" : "favorites.add");
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      aria-pressed={starred}
+      aria-label={label}
+      title={label}
+      data-star={page.id}
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 focus-visible:opacity-100 dark:hover:bg-neutral-800 ${starred ? "opacity-100" : "opacity-0 group-hover/row:opacity-100 touch:opacity-100"}`}
+    >
+      <Star size={14} className={starred ? "fill-amber-400 text-amber-500" : ""} />
+    </button>
   );
 }
 
@@ -92,14 +124,10 @@ export function FavoritesListView({ extension }: NodeViewProps) {
   return (
     <Widget name="favorites" icon={<Star size={14} />} title={t("favorites.title")}>
       {favorites.data && !favorites.data.length && <p className={empty}>{t("widget.favoritesEmpty")}</p>}
-      <div className="grid gap-1 sm:grid-cols-2">
+      <div className={favorites.data?.length ? hairList : ""}>
         {favorites.data?.map((p) => (
-          <Link
-            key={p.id}
-            to={`/page/${p.id}`}
-            className="flex min-w-0 items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-          >
-            <span className="w-5 shrink-0 text-center">{pageIcon(p.icon) ?? (p.kind === "database" ? "🗃" : "📄")}</span>
+          <Link key={p.id} to={`/page/${p.id}`} className={hairRow}>
+            <span className="w-5 shrink-0 text-center">{pageIcon(p.icon) ?? (p.kind === "database" ? "🗃" : <FileText size={15} className="inline text-neutral-400" />)}</span>
             <span className="truncate">{pageTitle(p.title)}</span>
           </Link>
         ))}
@@ -161,8 +189,8 @@ export function UpcomingEventsView({ node, updateAttributes, editor, extension }
       tools={
         editable && (
           <>
-            <button className={tool} onClick={(e) => setPanel({ kind: "days", anchor: e.currentTarget })}>
-              {t("widget.nextDays", { count: days })}
+            <button className={pill} onClick={(e) => setPanel({ kind: "days", anchor: e.currentTarget })} aria-haspopup="menu" data-days-filter>
+              <span className="text-neutral-400">{t("common.show")}</span> {t("widget.nextDays", { count: days })}
             </button>
             <button className={tool} onClick={(e) => setPanel({ kind: "sources", anchor: e.currentTarget })} aria-label={t("calendarBlock.sources")}>
               <Settings2 size={14} />
@@ -175,10 +203,7 @@ export function UpcomingEventsView({ node, updateAttributes, editor, extension }
         <div className={`${empty} flex flex-col items-start gap-2`}>
           <span>{editable ? t("widget.upcomingChoose") : t("calendarBlock.emptyReadOnly")}</span>
           {editable && (
-            <button
-              className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
-              onClick={(e) => setPanel({ kind: "sources", anchor: e.currentTarget })}
-            >
+            <button className={outlineBtn} onClick={(e) => setPanel({ kind: "sources", anchor: e.currentTarget })}>
               {t("calendarBlock.chooseDatabases")}
             </button>
           )}
@@ -186,7 +211,7 @@ export function UpcomingEventsView({ node, updateAttributes, editor, extension }
       ) : !events.length ? (
         <p className={empty}>{t("widget.upcomingEmpty", { count: days })}</p>
       ) : (
-        <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 border-y border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
           {byDay.map((day) => (
             <div key={day} className="flex gap-3 px-3 py-2 sm:gap-4" data-upcoming-day={day}>
               <div
@@ -268,7 +293,7 @@ export function DatabaseRowsView({ node, updateAttributes, editor, extension }: 
           <div className={`${empty} flex flex-col items-start gap-2`}>
             <span>{editable ? t("widget.rowsChoose") : t("calendarBlock.emptyReadOnly")}</span>
             {editable && (
-              <button className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700" onClick={(e) => setPicker(e.currentTarget)}>
+              <button className={outlineBtn} onClick={(e) => setPicker(e.currentTarget)}>
                 {t("widget.chooseDatabase")}
               </button>
             )}
@@ -336,7 +361,7 @@ function DatabaseRows({
       {db.isError && <p className={empty}>🔒 {t("database.private")}</p>}
       {data && !rows.length && <p className={empty}>{t("widget.rowsEmpty")}</p>}
       {data && rows.length > 0 && (
-        <div className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+        <div className="divide-y divide-neutral-200 border-y border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
           {rows.slice(0, limit).map((row) => (
             <div key={row.id} className="flex min-w-0 items-center gap-2 px-3 py-1.5 text-sm" data-row={row.id}>
               {check && (

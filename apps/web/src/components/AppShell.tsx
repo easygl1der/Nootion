@@ -37,6 +37,7 @@ import {
   Library,
   SquarePen,
   Waypoints,
+  MoreHorizontal,
 } from "lucide-react";
 import { disablePush, useReminderNotifications, useReminders } from "../lib/reminders";
 import { useCommentNotifications } from "../comments/queries";
@@ -56,6 +57,8 @@ import { useUpdateStatus, useVersion } from "./UpdateNotice";
 import { buildTree, pageTitle } from "../lib/tree";
 import { DRAG_TYPE, PageTree } from "./PageTree";
 import { SlideIndicator } from "./SlideIndicator";
+import { Item } from "./PageMenu";
+import { Popover } from "../database/Popover";
 import { Button, CancelButton, ErrorText, Field, Modal } from "./ui";
 import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
@@ -447,9 +450,9 @@ function SectionHeader({
       {onToggle && <ChevronRight size={12} aria-hidden className={`shrink-0 transition-transform duration-150 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} />}
     </>
   );
-  const nameClass = "flex min-w-0 items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-neutral-500";
+  const nameClass = "flex min-w-0 items-center gap-1.5 text-xs font-medium text-neutral-500";
   return (
-    <div className="group flex items-center justify-between px-2 pb-1">
+    <div className="group mb-1 flex min-h-7 items-center justify-between border-b border-white/10 px-1 pb-1" data-space-header>
       {onToggle ? (
         <button type="button" onClick={onToggle} aria-expanded={open} className={`${nameClass} rounded-sm outline-none hover:text-(color:--sidebar-accent-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring)`} data-space-toggle>
           {name}
@@ -489,8 +492,10 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
     navigate(`/page/${res.page.id}`);
   }
 
+  const [menu, setMenu] = useState<HTMLElement | null>(null);
+  // DEM-1495 (Ledger): one "+" and one named "…" menu per space, instead of three bare icons
   const iconBtn =
-    "rounded p-0.5 text-neutral-400 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-800";
+    "flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-(--sidebar-ring)";
   return (
     <div>
       <SectionHeader
@@ -505,27 +510,36 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
         open={open}
         onToggle={toggle}
       >
-        {workspace.kind === "shared" && (
-          <Link
-            to={`/workspace/${workspace.id}`}
-            className={iconBtn}
-            title={t("workspace.settings")}
-          >
-            <Settings size={13} />
-          </Link>
-        )}
-        <a
-          href={`/api/workspaces/${workspace.id}/export`}
-          download
+        <button
+          type="button"
+          onClick={(e) => setMenu(menu ? null : e.currentTarget)}
           className={iconBtn}
-          title={t("workspace.export")}
+          title={t("workspace.options")}
+          aria-label={t("workspace.options")}
+          aria-haspopup="menu"
+          aria-expanded={!!menu}
+          data-space-menu
         >
-          <Download size={13} />
-        </a>
+          <MoreHorizontal size={14} />
+        </button>
         {canEdit && (
-          <button onClick={addPage} className={iconBtn} title={t("page.new")}>
+          <button type="button" onClick={addPage} className={iconBtn} title={t("page.new")} aria-label={t("page.new")}>
             <Plus size={14} />
           </button>
+        )}
+        {menu && (
+          <Popover anchor={menu} onClose={() => setMenu(null)} width={280}>
+            <div role="menu" className="p-1 text-sm">
+              <Item icon={<Download size={15} />} onClick={() => { setMenu(null); location.assign(withBase(`/api/workspaces/${workspace.id}/export`)); }}>
+                {t("workspace.export")}
+              </Item>
+              {workspace.kind === "shared" && (
+                <Item icon={<Settings size={15} />} onClick={() => { setMenu(null); navigate(`/workspace/${workspace.id}`); }}>
+                  {t("workspace.settings")}
+                </Item>
+              )}
+            </div>
+          </Popover>
         )}
       </SectionHeader>
       {open && pages.data && (

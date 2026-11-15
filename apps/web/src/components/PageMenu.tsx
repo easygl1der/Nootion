@@ -21,7 +21,7 @@ export const toElement = (a: MenuAnchor): HTMLElement =>
     ? a
     : ({ getBoundingClientRect: () => new DOMRect(a.x, a.y, 0, 0), contains: () => false } as unknown as HTMLElement);
 
-function Item({ icon, children, onClick, danger }: { icon: ReactNode; children: ReactNode; onClick: () => void; danger?: boolean }) {
+export function Item({ icon, children, onClick, danger }: { icon: ReactNode; children: ReactNode; onClick: () => void; danger?: boolean }) {
   return (
     <button
       type="button"
@@ -35,7 +35,7 @@ function Item({ icon, children, onClick, danger }: { icon: ReactNode; children: 
   );
 }
 
-const Separator = () => <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />;
+export const Separator = () => <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />;
 
 /**
  * The menu of a page of the sidebar (right click, or its "…" button): favorites, link, duplicate, rename, move,

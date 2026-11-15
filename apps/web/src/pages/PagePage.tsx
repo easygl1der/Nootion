@@ -139,7 +139,7 @@ function PageView({ page }: { page: PageDetail }) {
               <ChevronRight size={14} className="shrink-0" />
             </span>
           ))}
-          <span className="truncate px-1 text-neutral-800 dark:text-neutral-200">
+          <span className="truncate px-1 text-neutral-800 dark:text-neutral-700">
             {pageIcon(page.icon)} {pageTitle(title)}
           </span>
         </nav>
@@ -181,9 +181,6 @@ function PageView({ page }: { page: PageDetail }) {
               <Button variant="ghost" onClick={() => setSharing(true)} aria-label={t("share.button")}>
                 <Share2 size={16} /> <span className="hidden sm:inline">{t("share.button")}</span>
               </Button>
-              <Button variant="ghost" onClick={trash} title={t("page.trash")}>
-                <Trash2 size={16} />
-              </Button>
             </>
           )}
         </div>
@@ -195,7 +192,7 @@ function PageView({ page }: { page: PageDetail }) {
         ref={bleed}
         className={`mx-auto px-5 pb-24 ${page.cover ? "pt-6" : "pt-8 sm:pt-16"} sm:px-12 ${page.fullWidth || page.kind === "database" ? "max-w-none sm:px-24" : "max-w-3xl"}`}
       >
-        <div className="flex flex-wrap items-end gap-1">
+        <div className="flex flex-wrap items-end gap-1" data-title-block>
           {!page.home && <IconPicker icon={page.icon} editable={canEdit} onChange={(icon) => save({ icon })} />}
           {canEdit && !page.cover && <AddCoverButton pageId={page.id} onChange={save} />}
         </div>
@@ -297,6 +294,19 @@ function PageView({ page }: { page: PageDetail }) {
           >
             {t("page.exportMarkdown")}
           </a>
+          {canManage && !page.home && (
+            <>
+              <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
+              <button
+                type="button"
+                onClick={() => { setMenu(null); void trash(); }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-red-600 hover:bg-neutral-100 dark:text-red-400 dark:hover:bg-neutral-800"
+                data-page-trash
+              >
+                <Trash2 size={15} /> {t("page.trash")}
+              </button>
+            </>
+          )}
         </Popover>
       )}
       {hasComments && commentsOpen && (

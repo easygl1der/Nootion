@@ -110,3 +110,16 @@ table th { background: #f6f9fd; }
 
 /* the rail parts (header, footer) use the portal's Tailwind radii: rounded-sm 4px, md 6px, lg 8px (the page body keeps Nootion's own) */
 .wrise-rail { --radius-sm: 0.25rem; --radius-md: 0.375rem; --radius-lg: 0.5rem; }
+
+/* ---- DEM-1495 (DEM-1449 A · Ledger): the Notes rail and page in the Ledger style ----
+   a long page list fades out at the bottom so it reads as scrolling, not cut; the last 28px are padding, so nothing stays hidden at the end */
+@media (min-width: 768px) {
+  aside[aria-label="Sidebar"] .wrise-tree { -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); mask-image: linear-gradient(#000 calc(100% - 28px), transparent); padding-bottom: 28px; }
+}
+/* the space header's hairline sits on the navy; the light theme's border colour would glare there */
+aside[aria-label="Sidebar"] [data-space-header] { border-color: rgba(255, 255, 255, 0.1); }
+/* "Add a cover" shows on hover or focus of the title block (as in Notion), not on every visit; touch screens keep it */
+@media (hover: hover) {
+  [data-title-block] [data-add-cover] { opacity: 0; transition: opacity 150ms ease-out; }
+  [data-title-block]:hover [data-add-cover], [data-title-block]:focus-within [data-add-cover] { opacity: 1; }
+}

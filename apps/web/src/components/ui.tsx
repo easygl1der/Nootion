@@ -7,7 +7,7 @@ import { withBase } from "../lib/base";
 export function Button({ variant = "primary", className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "danger" }) {
   const styles = {
     primary: "bg-neutral-900 text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200",
-    ghost: "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800",
+    ghost: "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-600 dark:hover:bg-neutral-800",
     danger: "text-red-600 hover:bg-red-50 dark:hover:bg-red-950",
   }[variant];
   return (

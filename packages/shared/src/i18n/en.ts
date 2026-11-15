@@ -1711,6 +1711,7 @@ export const en = {
   "workspace.new": "New shared space",
   "workspace.newHelp": "You can then add members to it. They will see every page of the space, according to their role.",
   "workspace.notFound": "Space not found.",
+  "workspace.options": "Space options",
   "workspace.person": "Person",
   "workspace.personal": "Personal space",
   "workspace.removeMember": "Remove from the space",
