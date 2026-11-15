@@ -528,7 +528,7 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
           </button>
         )}
         {menu && (
-          <Popover anchor={menu} onClose={() => setMenu(null)} width={280}>
+          <Popover anchor={menu} onClose={() => setMenu(null)} width={320}>
             <div role="menu" className="p-1 text-sm">
               <Item icon={<Download size={15} />} onClick={() => { setMenu(null); location.assign(withBase(`/api/workspaces/${workspace.id}/export`)); }}>
                 {t("workspace.export")}
