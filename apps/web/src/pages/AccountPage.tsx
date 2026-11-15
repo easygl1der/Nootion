@@ -26,11 +26,15 @@ import { ConnectedServices, useConnectedServices } from "../components/Connected
 import { clearOfflineData } from "../lib/offline";
 import { useRefreshPages, useWorkspaces } from "../lib/queries";
 import { workspaceName } from "../lib/labels";
+import { useWriseMe } from "../lib/wrise";
 
 export function AccountPage() {
   const { user } = useSession();
   const { hash } = useLocation();
   const services = useConnectedServices();
+  // Inside the Wrise portal this is "Notes settings" (DEM-1466): the profile, sign-in, language and theme are the portal's (its Settings, company
+  // sign-in), so only what is Notes' own stays: import, emails, the demo space, connected services, MCP, Notes API tokens, the danger zone.
+  const wrise = useWriseMe();
   // Links to a section (#import) open the page there.
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
@@ -39,7 +43,7 @@ export function AccountPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-10 px-5 py-8 sm:px-8 sm:py-12">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">{t("account.title")}</h1>
+        <h1 className="text-2xl font-bold">{wrise ? "Notes settings" : t("account.title")}</h1>
         {/* Also reachable from here, should the sidebar's footer be out of reach. */}
         {user.role === "admin" && (
           <Link
@@ -50,12 +54,16 @@ export function AccountPage() {
           </Link>
         )}
       </div>
-      <ProfileSection user={user} />
-      <EmailSection user={user} />
-      <PasswordSection />
-      <TwoFactorSection />
-      <LanguageSection user={user} />
-      <ThemeSection />
+      {!wrise && (
+        <>
+          <ProfileSection user={user} />
+          <EmailSection user={user} />
+          <PasswordSection />
+          <TwoFactorSection />
+          <LanguageSection user={user} />
+          <ThemeSection />
+        </>
+      )}
       <EmailPrefsSection />
       <ImportSection />
       <DemoSection />
