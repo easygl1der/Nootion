@@ -82,3 +82,26 @@ export async function writeLogout() {
   try { window.sessionStorage.clear(); localStorage.removeItem(ME_KEY); } catch { /* storage blocked */ }
   window.location.replace(new URL(answer?.redirectTo ?? "/login", window.location.origin));
 }
+
+// The portal's "Switch account (view as)" list (DEM-1466): the same /api/portal/view-as the portal's account menu reads, so the server alone
+// decides who may view as whom. Notes does not open under view as (portal lib/nootion/relay.ts mayOpenNootion), so a pick lands on the portal.
+export interface WriseViewAsAccount { username: string; displayName: string; role: string }
+export function useWriseViewAs(on: boolean): WriseViewAsAccount[] {
+  return useQuery({
+    queryKey: ["wrise-view-as"],
+    enabled: on,
+    queryFn: async () => {
+      const r = await fetch(new URL("/api/portal/view-as", window.location.origin), { credentials: "same-origin", cache: "no-store" });
+      const body = r.ok ? ((await r.json()) as { enabled?: boolean; accounts?: WriseViewAsAccount[] }) : null;
+      return body?.enabled && Array.isArray(body.accounts) ? body.accounts : [];
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
+  }).data ?? [];
+}
+export async function writeViewAs(username: string) {
+  const r = await fetch(new URL("/api/portal/view-as", window.location.origin), {
+    method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ username }),
+  });
+  if (r.ok) window.location.assign(new URL("/", window.location.origin));
+}

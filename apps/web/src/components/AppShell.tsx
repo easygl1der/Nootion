@@ -26,7 +26,6 @@ import {
   FileText,
   Calendar,
   ChevronsUpDown,
-  BadgeCheck,
   Bell,
   Home,
   Mail,
@@ -73,7 +72,7 @@ import { SyncStatus } from "./SyncStatus";
 import { useLiveEvents } from "../lib/live";
 import { pageIcon } from "../lib/icons";
 import { syncErrorText, useDesktopSync } from "../pages/SyncPage";
-import { useWriseMe, writeAvatars, writeLogout, writeRole, writeSettings, type WriseMe } from "../lib/wrise";
+import { useWriseMe, useWriseViewAs, writeAvatars, writeLogout, writeRole, writeSettings, writeViewAs, type WriseMe } from "../lib/wrise";
 
 // Official Wrise files (apps/web/public): the wordmark, and the mark when the sidebar is put away.
 // The Wrise rail's brand row (portal: sidebar-logo.tsx in SidebarHeader): the official logo, "v<version>" under it.
@@ -116,8 +115,10 @@ const RAIL_BTN = "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 
 const MENU_ITEM = "flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-[#122033] outline-none hover:bg-[#eef3f9] focus-visible:bg-[#eef3f9] dark:text-[#f6f9fd] dark:hover:bg-[#16283b] dark:focus-visible:bg-[#16283b]";
 
 // The rail's account block (portal: nav-user.tsx): avatar, name, role, chevron; the chevron opens the account menu.
-// DEM-1392: with the portal there (wriseai.com/notes) it is the portal's account: its name, role, picture and menu (Account, Notifications, Settings
-// open the portal's Settings; Log out ends both). Notes keeps only what is its own: Trash, Administration for its admin, Sync, and the source link.
+// DEM-1392: with the portal there (wriseai.com/notes) it is the portal's account: its name, role, picture; Log out ends both.
+// DEM-1466 (Yihua 2026-11-15): the menu holds only what the portal's Settings row does not: the portal's view-as list, Notes settings
+// (Nootion's account page cut to what is Notes' own), Administration for its admin, Sync. Account / Notifications / Settings left (the Settings row
+// opens the portal's), Trash moved to the rail above Settings.
 function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncLinks, syncError }: {
   wrise: WriseMe | null; onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
 }) {
@@ -147,7 +148,7 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
   const role = wrise ? writeRole(wrise.role) : (user?.role ?? "").replace(/^./, (c) => c.toUpperCase());
   const photo = wrise ? (writeAvatars(wrise)[failed] ?? null) : user?.avatarUrl;
   const go = (to: string) => { setOpen(false); navigate(to); };
-  const settings = (section?: string) => { setOpen(false); writeSettings(section); };
+  const viewAs = useWriseViewAs(!!wrise);
   const face = (size: string) => (
     photo
       ? <img key={photo} src={photo} alt="" data-no-base={wrise ? "" : undefined} onError={() => setFailed((n) => n + 1)} className={`${size} shrink-0 rounded-lg object-cover`} />
@@ -175,23 +176,30 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
             <div className="grid flex-1 leading-tight"><span className="truncate font-medium">{name}</span><span className="truncate text-xs text-[#64748b]">{role}</span></div>
           </div>
           <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
-          {wrise ? (
+          {viewAs.length > 0 && (
             <>
-              <button role="menuitem" className={MENU_ITEM} onClick={() => settings("accounts")}><BadgeCheck size={16} /> Account</button>
-              <button role="menuitem" className={MENU_ITEM} onClick={() => settings("notifications")}><Bell size={16} /> Notifications</button>
-              <button role="menuitem" className={MENU_ITEM} onClick={() => settings()}><Settings size={16} /> Settings</button>
+              <div className="px-1.5 py-1 text-xs text-[#64748b]">Switch account (view as)</div>
+              {/* Only the list scrolls, as in the portal (DEM-897). */}
+              <div className="max-h-[min(50vh,22rem)] overflow-y-auto overscroll-contain" data-testid="view-as-list">
+                {viewAs.map((a) => (
+                  <button key={a.username} role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); void writeViewAs(a.username); }}>
+                    <span className="truncate">{a.displayName}</span>
+                    <span className="ml-auto shrink-0 pl-2 text-xs text-[#64748b]">{writeRole(a.role)}</span>
+                  </button>
+                ))}
+              </div>
               <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
             </>
-          ) : (
-            <button role="menuitem" className={MENU_ITEM} onClick={() => go("/account")}><User size={16} /> {t("account.title")}</button>
           )}
+          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/account")} data-testid="notes-settings">
+            {wrise ? <><NotebookText size={16} /> Notes settings</> : <><User size={16} /> {t("account.title")}</>}
+          </button>
           {admin && (
             <button role="menuitem" className={MENU_ITEM} onClick={() => go("/admin")}>
               <Settings size={16} /> {t("admin.title")}
               {updateWarning && <span className="ml-auto text-amber-500" title={updateText} data-update-warning><AlertTriangle size={14} aria-label={updateText} /></span>}
             </button>
           )}
-          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/trash")}><Trash2 size={16} /> {t("trash.title")}</button>
           {syncLinks && (
             <button role="menuitem" className={MENU_ITEM} onClick={() => go("/sync")}>
               <RefreshCw size={16} /> {t("sync.title")}
@@ -361,14 +369,15 @@ export function AppShell() {
           <WorkspaceSection key={ws.id} workspace={ws} />
         ))}
         <SharedSection />
-        <button
-          onClick={() => setCreatingWorkspace(true)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-500 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60"
-        >
-          <Plus size={16} /> {t("workspace.new")}
+        <button type="button" onClick={() => setCreatingWorkspace(true)} className={`${RAIL_BTN} h-8 text-(color:--sidebar-foreground)/60`} data-testid="new-space">
+          <Plus aria-hidden /> {t("workspace.new")}
         </button>
       </nav>
-      <div className="wrise-rail flex flex-col gap-2 p-2">
+      <div className="wrise-rail flex flex-col gap-0.5 p-2">
+        {/* Trash above Settings (DEM-1466): Notes' own, so a row of its own. */}
+        <NavLink to="/trash" className={`${RAIL_BTN} h-8`} data-testid="trash-row">
+          <Trash2 aria-hidden /> <span className="wrise-label">{t("trash.title")}</span>
+        </NavLink>
         {/* One Settings: the portal's dialog when Notes runs inside it (DEM-1392), Nootion's account page otherwise. */}
         {wrise ? (
           <button type="button" onClick={() => writeSettings()} className={`${RAIL_BTN} h-8`} data-testid="settings-row">
@@ -379,6 +388,7 @@ export function AppShell() {
             <Settings aria-hidden /> <span className="wrise-label">Settings</span>
           </NavLink>
         )}
+        <div className="h-1.5" aria-hidden />
         <NavUserBlock
           wrise={wrise}
           onLogout={logout}
