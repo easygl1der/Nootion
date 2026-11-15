@@ -328,7 +328,16 @@ body {
   @apply text-red-600 before:content-none dark:text-red-400;
 }
 .nootion-content table {
-  @apply my-4 w-full border-collapse table-fixed;
+  @apply my-4 border-collapse;
+  /* Like Notion (DEM-1447): columns are as wide as their text, so a long-text column is not squeezed into a sliver next to
+     short number columns; a table wider than the page scrolls sideways (.tableWrapper). Filling at least the text width
+     wins over the min-width the column-resize plugin writes inline. A dragged column keeps its width (its <col> style). */
+  width: max-content;
+  min-width: 100% !important;
+}
+/* A column nobody has dragged grows with its text up to 24rem, then wraps. */
+.nootion-content :is(td, th):not([colwidth]) > * {
+  max-width: 24rem;
 }
 .nootion-content th,
 .nootion-content td {
