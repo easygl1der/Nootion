@@ -347,6 +347,15 @@ body {
 .nootion-content .tableWrapper {
   @apply overflow-x-auto;
 }
+/* Like Notion (DEM-1447): the rows of a database (table and board views) and a wide table (5+ columns) in the text reach to
+   the right edge of the page area, and scroll sideways under the left margin too, while the first column lines up with the text.
+   Titles and view bars stay on the text column. --bleed-l / --bleed-r: lib/bleed.ts; the 3rem kept on the right is the column's margin. */
+.nootion-content > .node-databaseBlock .thin-scroll:not([data-timeline]),
+.nootion-content > .tableWrapper:has(tr > :nth-child(5)) {
+  margin-left: calc(-1 * max(var(--bleed-l, 0px), 3rem));
+  padding-left: max(var(--bleed-l, 0px), 3rem);
+  margin-right: calc(-1 * max(0px, var(--bleed-r, 0px) - 3rem));
+}
 .nootion-content p.is-empty::before,
 .nootion-content h1.is-empty::before,
 .nootion-content h2.is-empty::before,

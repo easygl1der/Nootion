@@ -27,6 +27,7 @@ import { CommentsPanel, type DraftAnchor } from "../comments/CommentsPanel";
 import { useComments } from "../comments/queries";
 import { nextRunText, recurrenceText, RecurrenceDialog, useRecurrence } from "../components/RecurrenceDialog";
 import { pageIcon } from "../lib/icons";
+import { useBleed } from "../lib/bleed";
 
 /** A page, by the id in the address (or the one given, for the home page). */
 export function PagePage({ id: given }: { id?: string }) {
@@ -72,6 +73,7 @@ function PageView({ page }: { page: PageDetail }) {
   const [commentsOpen, setCommentsOpen] = useState(() => !!search.get("comment"));
   const [activeThread, setActiveThread] = useState<string | null>(() => search.get("comment"));
   const [draft, setDraft] = useState<DraftAnchor | null>(null);
+  const bleed = useBleed();
   const threads = useComments(page.id, hasComments);
   const openThreads = (threads.data ?? []).filter((th) => !th.resolvedAt).length;
   useEffect(() => {
@@ -188,8 +190,10 @@ function PageView({ page }: { page: PageDetail }) {
       </header>
 
       {page.cover && <PageCover pageId={page.id} cover={page.cover} position={page.coverPosition} editable={canEdit} onChange={save} />}
+      {/* A database page spans the page area, like Notion's (DEM-1447). */}
       <div
-        className={`mx-auto px-5 pb-24 ${page.cover ? "pt-6" : "pt-8 sm:pt-16"} sm:px-12 ${page.fullWidth ? "max-w-none sm:px-24" : page.kind === "database" ? "max-w-6xl" : "max-w-3xl"}`}
+        ref={bleed}
+        className={`mx-auto px-5 pb-24 ${page.cover ? "pt-6" : "pt-8 sm:pt-16"} sm:px-12 ${page.fullWidth || page.kind === "database" ? "max-w-none sm:px-24" : "max-w-3xl"}`}
       >
         <div className="flex flex-wrap items-end gap-1">
           {!page.home && <IconPicker icon={page.icon} editable={canEdit} onChange={(icon) => save({ icon })} />}
