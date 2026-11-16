@@ -26,21 +26,18 @@ import {
   FileText,
   Calendar,
   ChevronsUpDown,
-  Bell,
   Home,
   Mail,
   MessageCircle,
   NotebookText,
   RefreshCw,
   ChevronRight,
-  Inbox,
   Library,
   SquarePen,
   Waypoints,
   MoreHorizontal,
 } from "lucide-react";
-import { disablePush, useReminderNotifications, useReminders } from "../lib/reminders";
-import { useCommentNotifications } from "../comments/queries";
+import { disablePush, useReminderNotifications } from "../lib/reminders";
 import { t, type PageSummary, type WorkspaceSummary } from "@nootion/shared";
 import { workspaceName } from "../lib/labels";
 import { api, isOfflineError } from "../lib/api";
@@ -64,7 +61,6 @@ import { usePlugins } from "../plugins/registry";
 import { SearchDialog, useSearchShortcut } from "./SearchDialog";
 import {
   QuickCaptureDialog,
-  captureShortcutLabel,
   useCaptureShortcut,
 } from "./QuickCapture";
 import { MobileBar, SidebarLayout, useSidebarCollapsed } from "./SidebarLayout";
@@ -254,14 +250,10 @@ function WiseTabs({ shown }: { shown?: string[] }) {
 }
 
 // Nootion's own rows under the Wrise tabs, as Notion keeps them above the spaces (DEM-1446, Yihua 2026-11-14: "personal space 上面应该也是有一些东西"):
-// New page (in the Personal space), Quick capture, Notifications with its count, All pages, Graph, in the rail's style. Nootion's Home is the Notes tab.
-function NootionNav({ onCapture, onNewPage }: { onCapture: () => void; onNewPage?: () => void }) {
-  const touch = useIsTouch();
-  const due =
-    (useReminders().data?.filter((r) => r.due).length ?? 0) +
-    (useCommentNotifications().data?.filter((n) => !n.read).length ?? 0);
+// New page (in the Personal space), All pages, Graph, in the rail's style. Nootion's Home is the Notes tab.
+// Quick capture and Notifications are off the list (Yihua 2026-11-16, DEM-1512); ⌘⌥N and /reminders still work.
+function NootionNav({ onNewPage }: { onNewPage?: () => void }) {
   const row = `${RAIL_BTN} relative h-8 text-(color:--sidebar-foreground)`;
-  const kbd = "pointer-events-none ml-auto font-sans text-xs text-(color:--sidebar-foreground)/50";
   return (
     <div className="flex flex-col gap-0.5 px-2" data-testid="nootion-nav">
       {onNewPage && (
@@ -269,18 +261,6 @@ function NootionNav({ onCapture, onNewPage }: { onCapture: () => void; onNewPage
           <SquarePen aria-hidden /> {t("page.new")}
         </button>
       )}
-      <button type="button" onClick={onCapture} className={row} data-quick-capture-button>
-        <Inbox aria-hidden /> {t("inbox.capture")}
-        {!touch && <kbd className={kbd}>{captureShortcutLabel()}</kbd>}
-      </button>
-      <NavLink to="/reminders" className={row}>
-        <Bell aria-hidden /> {t("reminders.title")}
-        {due > 0 && (
-          <span className="ml-auto rounded-full bg-[#f0b85a] px-1.5 text-[11px] font-semibold leading-[18px] text-[#0b1c33]" data-reminders-due>
-            {due}
-          </span>
-        )}
-      </NavLink>
       <NavLink to="/pages" className={row}>
         <Library aria-hidden /> {t("library.title")}
       </NavLink>
@@ -363,7 +343,7 @@ export function AppShell() {
         <SyncStatus className="mx-3 w-fit" />
         <SearchBox onClick={() => setSearching(true)} />
         <WiseTabs shown={wrise?.tabs} />
-        <NootionNav onCapture={() => setCapturing(true)} onNewPage={personal ? newPage : undefined} />
+        <NootionNav onNewPage={personal ? newPage : undefined} />
       </div>
       <nav className="wrise-tree relative isolate flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
         <SlideIndicator />
