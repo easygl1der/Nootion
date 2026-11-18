@@ -202,7 +202,7 @@ function CellChanges({ page, databaseId, canRestore }: { page: PageDetail; datab
     setBusy(c.id);
     try {
       await api(`/databases/${databaseId}/rows/${page.id}/history/${c.id}/restore`, { method: "POST" });
-      await Promise.all([qc.invalidateQueries({ queryKey: key }), qc.invalidateQueries({ queryKey: keys.page(page.id) }), qc.invalidateQueries({ queryKey: ["database"] })]);
+      await Promise.all([qc.invalidateQueries({ queryKey: key }), qc.invalidateQueries({ queryKey: keys.page(page.id) }), qc.invalidateQueries({ queryKey: ["database"] }), qc.invalidateQueries({ queryKey: ["database-row", page.id] })]);
     } finally {
       setBusy(null);
     }
