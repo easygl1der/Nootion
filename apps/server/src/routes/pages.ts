@@ -28,6 +28,7 @@ import {
 import { breadcrumbFor, getPageMeta, notRow, pageMeta, listDescendants, nextPosition, placeAmongSiblings, sortPages, toDetail, toSummary } from "../pages.js";
 import { t } from "@nootion/shared";
 import { homePageOf, recordVisit } from "../home.js";
+import { TITLE, changeAgent, recordCellChanges } from "../cell-history.js";
 import { copyTree } from "../templates.js";
 import { syncReminders } from "../reminders.js";
 import { listBacklinks } from "../backlinks.js";
@@ -255,7 +256,10 @@ export const pageRoutes: FastifyPluginAsync = async (app) => {
     const current = db.select({ content: pages.contentJson }).from(pages).where(eq(pages.id, page.id)).get();
     if (current?.content) recordSnapshot(db, page.id, { content: current.content as ProseMirrorNode, force: true });
     await writeContent(app.collab, db, page.id, snapshot.content as ProseMirrorNode);
-    db.update(pages).set({ title: snapshot.title, updatedAt: new Date() }).where(eq(pages.id, page.id)).run();
+    db.transaction((tx) => {
+      tx.update(pages).set({ title: snapshot.title, updatedAt: new Date() }).where(eq(pages.id, page.id)).run();
+      if (page.kind === "row" && page.parentId) recordCellChanges(tx, { databaseId: page.parentId, rowId: page.id, userId: user.id, agent: changeAgent(req) }, [{ propertyId: TITLE, before: page.title, after: snapshot.title }]);
+    });
     recordSnapshot(db, page.id, { content: snapshot.content as ProseMirrorNode, authors: [user.id], force: true, restoredFrom: snapshot.createdAt });
     return { ok: true };
   });
@@ -294,12 +298,13 @@ export const pageRoutes: FastifyPluginAsync = async (app) => {
     }
     // A row's title is one of its database's columns: automations may watch it.
     const rowBefore = current.kind === "row" && current.parentId && input.title !== undefined ? rowSnapshot(db, current.parentId, current.id) : null;
-    const page = db
-      .update(pages)
-      .set({ ...input, updatedAt: new Date() })
-      .where(eq(pages.id, req.params.id))
-      .returning(pageMeta)
-      .get();
+    const page = db.transaction((tx) => {
+      const updated = tx.update(pages).set({ ...input, updatedAt: new Date() }).where(eq(pages.id, req.params.id)).returning(pageMeta).get();
+      if (current.kind === "row" && current.parentId && input.title !== undefined) {
+        recordCellChanges(tx, { databaseId: current.parentId, rowId: current.id, userId: user.id, agent: changeAgent(req) }, [{ propertyId: TITLE, before: current.title, after: input.title }]);
+      }
+      return updated;
+    });
     // A template's dates remind nobody; they come back when it is a page again.
     if (input.template !== undefined) {
       syncReminders(db, page.id, db.select({ json: pages.contentJson }).from(pages).where(eq(pages.id, page.id)).get()?.json as ProseMirrorNode | null);

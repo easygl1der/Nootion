@@ -389,6 +389,30 @@ export const pageSnapshots = sqliteTable(
   (t) => [index("page_snapshots_page_idx").on(t.pageId, t.createdAt)],
 );
 
+/** Every change of a database cell (or of a row title, property_id "title"): who, when, old and new value. */
+export const cellChanges = sqliteTable(
+  "cell_changes",
+  {
+    id: text("id").primaryKey(),
+    databaseId: text("database_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    rowId: text("row_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    propertyId: text("property_id").notNull(),
+    before: text("before", { mode: "json" }),
+    after: text("after", { mode: "json" }),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    // Set when an app, an AI agent (its token name) or an automation made the change.
+    agent: text("agent"),
+    // Set on the change a restore produced: the id of the change that was undone.
+    restoredFrom: text("restored_from"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("cell_changes_row_idx").on(t.rowId, t.createdAt), index("cell_changes_db_idx").on(t.databaseId, t.createdAt)],
+);
+
 /** Reminders set on dates written in pages: one per date and per page, for the user who set it. */
 export const reminders = sqliteTable(
   "reminders",

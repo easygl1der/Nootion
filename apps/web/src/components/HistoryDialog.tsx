@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EditorContent, useEditor } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/core";
 import { Bot, History, RotateCcw, X } from "lucide-react";
-import { atLeast, intlLocale, t, type ClientPluginInfo, type PageDetail, type PageVersion } from "@nootion/shared";
+import { atLeast, intlLocale, t, type CellChange, type ClientPluginInfo, type PageDetail, type PageVersion } from "@nootion/shared";
 import { api } from "../lib/api";
 import { keys, useRefreshPages } from "../lib/queries";
 import { pageTitle } from "../lib/tree";
@@ -127,6 +127,7 @@ export function HistoryDialog({ page, onClose }: { page: PageDetail; onClose: ()
       </header>
       <div className="flex min-h-0 flex-1 flex-col-reverse md:flex-row">
         <section className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-10">
+          {page.kind === "row" && page.parentId && <CellChanges page={page} databaseId={page.parentId} canRestore={canRestore} />}
           {!versions.length && list.isSuccess && <p className="text-sm text-neutral-500">{t("history.empty")}</p>}
           {current && (
             <>
@@ -183,6 +184,58 @@ export function HistoryDialog({ page, onClose }: { page: PageDetail; onClose: ()
           ))}
         </aside>
       </div>
+    </div>
+  );
+}
+
+/** The changes of a database row's cells: who, when, old → new, with a Restore button for editors. */
+function CellChanges({ page, databaseId, canRestore }: { page: PageDetail; databaseId: string; canRestore: boolean }) {
+  const qc = useQueryClient();
+  const key = ["history", page.id, "cells"];
+  const list = useQuery({ queryKey: key, queryFn: async () => (await api<{ changes: CellChange[] }>(`/databases/${databaseId}/rows/${page.id}/history`)).changes, staleTime: 0 });
+  const [busy, setBusy] = useState<string | null>(null);
+  const none = t("history.cellNone");
+  const name = (c: CellChange) => (c.propertyId === "title" ? t("history.cellTitle") : (c.propertyName ?? c.propertyId));
+
+  async function restore(c: CellChange) {
+    if (!confirm(t("history.cellConfirm", { property: name(c), value: c.beforeText || none }))) return;
+    setBusy(c.id);
+    try {
+      await api(`/databases/${databaseId}/rows/${page.id}/history/${c.id}/restore`, { method: "POST" });
+      await Promise.all([qc.invalidateQueries({ queryKey: key }), qc.invalidateQueries({ queryKey: keys.page(page.id) }), qc.invalidateQueries({ queryKey: ["database"] })]);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mb-8" data-cell-history>
+      <h2 className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300">{t("history.cellChanges")}</h2>
+      {list.isSuccess && !list.data.length && <p className="text-sm text-neutral-500">{t("history.cellEmpty")}</p>}
+      <ul className="divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
+        {(list.data ?? []).map((c) => (
+          <li key={c.id} data-cell-change={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+            <span className="w-40 shrink-0 text-neutral-500">{when(c.createdAt)}</span>
+            <span className="w-28 shrink-0 truncate">{c.user?.name ?? "—"}</span>
+            {c.agent && (
+              <span className="text-xs text-violet-700 dark:text-violet-400">
+                <Bot size={12} className="mr-1 inline" />
+                {t("history.agent", { name: c.agent })}
+              </span>
+            )}
+            <span className="font-medium">{name(c)}</span>
+            <span className="min-w-0 flex-1 break-words">
+              <span className="text-red-800 line-through dark:text-red-300">{c.beforeText || none}</span> → <span className="text-green-800 dark:text-green-300">{c.afterText || none}</span>
+            </span>
+            {c.restoredFrom && <span className="text-xs text-amber-700 dark:text-amber-400">{t("history.cellRestored")}</span>}
+            {canRestore && c.propertyName && (
+              <button onClick={() => restore(c)} disabled={busy === c.id} className="flex items-center gap-1 rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800">
+                <RotateCcw size={12} /> {t("history.cellRestore")}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

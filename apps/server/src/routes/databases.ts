@@ -22,7 +22,7 @@ import {
   viewSortSchema,
 } from "@nootion/shared";
 import { and, eq, inArray, isNull, max } from "drizzle-orm";
-import { databaseProperties, databaseViews, pages } from "../db/schema.js";
+import { databaseProperties, databaseViews, cellChanges, pages } from "../db/schema.js";
 import { HttpError, notFound, parseBody, requireUser } from "../http.js";
 import { CAN_CREATE_ROOT_PAGES, getPageRole, requirePageRole, requireWorkspaceRole } from "../permissions.js";
 import { nextPosition } from "../pages.js";
@@ -53,6 +53,7 @@ import { databaseCsv, databaseJson, safeName } from "../export.js";
 import { IMPORT_MAX_ROWS, parseCsv, planImport } from "../import.js";
 import { t } from "@nootion/shared";
 import { fromAutomation, rowSnapshot } from "../automations.js";
+import { TITLE, changeAgent, listCellChanges, recordCellChanges } from "../cell-history.js";
 
 /** Content-Disposition header of a download, with a non-ASCII-safe file name. */
 export function attachmentHeader(filename: string) {
@@ -521,6 +522,15 @@ export const databaseRoutes: FastifyPluginAsync = async (app) => {
         else props[k] = v;
       }
       const newTitle = title ?? input.title;
+      const oldTitle = tx.select({ title: pages.title }).from(pages).where(eq(pages.id, req.params.rowId)).get()!.title;
+      recordCellChanges(
+        tx,
+        { databaseId: req.params.id, rowId: req.params.rowId, userId: user.id, agent: changeAgent(req) },
+        [
+          ...Object.keys(values).map((k) => ({ propertyId: k, before: before[k] ?? null, after: values[k] ?? null })),
+          ...(newTitle !== undefined ? [{ propertyId: TITLE, before: oldTitle, after: newTitle }] : []),
+        ],
+      );
       tx.update(pages)
         .set({
           props,
@@ -533,6 +543,73 @@ export const databaseRoutes: FastifyPluginAsync = async (app) => {
         if (p.type === "relation" && p.id in values)
           syncTwin(tx, p, req.params.rowId, (before[p.id] as string[] | null) ?? [], (props[p.id] as string[] | null) ?? []);
       }
+    });
+    const after = rowSnapshot(db, req.params.id, req.params.rowId);
+    if (snapshot && after && !fromAutomation(req)) await app.automations.rowChanged({ databaseId: req.params.id, rowId: req.params.rowId, before: snapshot, after });
+    return rowResponse(user.id, req.params.id, req.params.rowId);
+  });
+
+  // --- Cell history: who changed which cell, and putting it back ---
+
+  app.get<{ Params: { id: string; rowId: string } }>("/:id/rows/:rowId/history", async (req) => {
+    const user = requireUser(req);
+    requireRow(db, user.id, req.params.id, req.params.rowId, "viewer");
+    const limit = Number((req.query as { limit?: string }).limit) || undefined;
+    return { changes: listCellChanges(db, req.params.id, listProperties(db, req.params.id), { rowId: req.params.rowId, limit }) };
+  });
+
+  // Recent changes across the database, for audit.
+  app.get<{ Params: { id: string } }>("/:id/history", async (req) => {
+    const user = requireUser(req);
+    requireDatabase(db, user.id, req.params.id, "viewer");
+    const q = req.query as { since?: string; limit?: string };
+    return { changes: listCellChanges(db, req.params.id, listProperties(db, req.params.id), { since: Number(q.since) || undefined, limit: Number(q.limit) || undefined }) };
+  });
+
+  // Sets the cell back to what it was before that change; the restore is itself a logged change.
+  app.post<{ Params: { id: string; rowId: string; changeId: string } }>("/:id/rows/:rowId/history/:changeId/restore", async (req) => {
+    const user = requireUser(req);
+    // A viewer can read the history, so this says 403 rather than the usual 404.
+    const { role } = requireRow(db, user.id, req.params.id, req.params.rowId, "viewer");
+    if (!atLeast(role, "editor")) throw new HttpError(403, "forbidden", t("error.forbidden"));
+    const change = db
+      .select()
+      .from(cellChanges)
+      .where(and(eq(cellChanges.id, req.params.changeId), eq(cellChanges.rowId, req.params.rowId), eq(cellChanges.databaseId, req.params.id)))
+      .get();
+    if (!change) throw notFound();
+    const properties = listProperties(db, req.params.id);
+    const prop = change.propertyId === TITLE ? properties.find((p) => p.type === "title") : properties.find((p) => p.id === change.propertyId);
+    if (!prop) throw new HttpError(409, "property_deleted", t("error.cellPropertyDeleted"));
+    let value: CellValue;
+    try {
+      checkRelationAccess(user.id, properties, { [prop.id]: change.before });
+      const checked = validateValues(db, properties, req.params.rowId, { [prop.id]: change.before });
+      value = prop.type === "title" ? (checked.title ?? "") : (checked.values[prop.id] ?? null);
+    } catch (e) {
+      // The old value no longer fits the column (an option was removed, a linked row is gone).
+      if (e instanceof HttpError && e.statusCode === 400) throw new HttpError(409, "cell_value_invalid", t("error.cellValueInvalid"));
+      throw e;
+    }
+    const snapshot = rowSnapshot(db, req.params.id, req.params.rowId);
+    db.transaction((tx) => {
+      const current = tx.select({ props: pages.props, title: pages.title }).from(pages).where(eq(pages.id, req.params.rowId)).get()!;
+      const before = { ...(current.props ?? {}) } as Record<string, CellValue>;
+      const props = { ...before };
+      if (prop.type !== "title") {
+        if (value === null) delete props[prop.id];
+        else props[prop.id] = value;
+      }
+      tx.update(pages)
+        .set({ props, updatedAt: new Date(), ...(prop.type === "title" ? { title: value as string } : {}) })
+        .where(eq(pages.id, req.params.rowId))
+        .run();
+      if (prop.type === "relation") syncTwin(tx, prop, req.params.rowId, (before[prop.id] as string[] | null) ?? [], (props[prop.id] as string[] | null) ?? []);
+      recordCellChanges(
+        tx,
+        { databaseId: req.params.id, rowId: req.params.rowId, userId: user.id, agent: changeAgent(req), restoredFrom: change.id },
+        [prop.type === "title" ? { propertyId: TITLE, before: current.title, after: value } : { propertyId: prop.id, before: before[prop.id] ?? null, after: value }],
+      );
     });
     const after = rowSnapshot(db, req.params.id, req.params.rowId);
     if (snapshot && after && !fromAutomation(req)) await app.automations.rowChanged({ databaseId: req.params.id, rowId: req.params.rowId, before: snapshot, after });

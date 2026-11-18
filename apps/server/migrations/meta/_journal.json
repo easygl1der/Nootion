@@ -253,6 +253,13 @@
       "when": 1794393180409,
       "tag": "0035_sync_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1794764156603,
+      "tag": "0036_cell_changes",
+      "breakpoints": true
     }
   ]
 }

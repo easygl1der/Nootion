@@ -321,3 +321,24 @@ export function linkHref(value: string): string | null {
   if (!scheme || /^[a-z0-9.-]+:\d+(\/|$)/i.test(v)) return `https://${v}`;
   return ["http", "https", "mailto", "tel"].includes(scheme) ? v : null;
 }
+
+/** One change of a cell (or of the row title, propertyId "title") in a row's history. */
+export interface CellChange {
+  id: string;
+  createdAt: string;
+  user: { id: string; name: string } | null;
+  /** Set when an app, an AI agent (its token name) or an automation made the change. */
+  agent: string | null;
+  rowId: string;
+  rowTitle: string;
+  propertyId: string;
+  /** Null when the column was deleted since: the change can no longer be restored. */
+  propertyName: string | null;
+  before: CellValue;
+  after: CellValue;
+  /** The same values as readable text (select options by name). */
+  beforeText: string;
+  afterText: string;
+  /** Set on a change a restore produced: the id of the change that was undone. */
+  restoredFrom: string | null;
+}
