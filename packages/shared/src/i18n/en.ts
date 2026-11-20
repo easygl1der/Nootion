@@ -53,6 +53,7 @@ export const en = {
   "activity.comment.resolve": "resolved or reopened a comment on",
   "activity.content.append": "added to",
   "activity.content.replace": "rewrote",
+  "activity.content.editBlock": "changed a block of",
   "activity.database.create": "created the database",
   "activity.database.update": "changed the database",
   "activity.empty": "Nothing yet.",

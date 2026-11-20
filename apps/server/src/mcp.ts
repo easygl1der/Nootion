@@ -13,7 +13,7 @@ const INSTRUCTIONS = `Wrise Workspace (based on Nootion) is a self-hosted notes 
 A page can be a plain page, a database (a table whose rows are pages with cell values) or a database row.
 Find things with search or list_pages, read pages as Markdown with read_page, and query databases with query_database.
 Columns and select options are named by their names. Changes show at once to people who have the page open, and each version you write is kept in the page's history, marked with your name.
-Prefer append_to_page to add to a page; replace_page_content rewrites all of it.`;
+Prefer append_to_page to add to a page; replace_page_content rewrites all of it; to change one paragraph use edit_block, which leaves comments and other people's typing elsewhere on the page alone.`;
 
 /** An error to show the agent: what the API answered. */
 class ApiError extends Error {}
@@ -332,6 +332,18 @@ function buildServer(call: Call, scope: TokenScope): McpServer {
       await call("POST", `/pages/${encodeURIComponent(pageId)}/content`, { markdown: md });
       return json({ ok: true });
     },
+  );
+
+  tool(
+    "edit_block",
+    {
+      title: "Change one block",
+      description:
+        "Changes one block (paragraph, heading, list, quote, code…) of a page: `match` is the block's current text exactly as read_page shows it, without Markdown marks; `markdown` is what replaces it (one or more blocks). Only that block changes: comments and everyone else's typing elsewhere on the page stay. Prefer it over replace_page_content for small edits. Fails if no block, or more than one, has that text.",
+      inputSchema: { pageId: id("page"), match: z.string().min(1).describe("The block's current text, without Markdown marks."), markdown },
+      annotations: write,
+    },
+    async ({ pageId, match, markdown: md }) => json(await call("PATCH", `/pages/${encodeURIComponent(pageId)}/blocks`, { match, markdown: md })),
   );
 
   tool(

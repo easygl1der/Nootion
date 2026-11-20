@@ -54,6 +54,7 @@ export const fr: Messages = {
   "activity.comment.resolve": "a résolu ou rouvert un commentaire sur",
   "activity.content.append": "a complété",
   "activity.content.replace": "a réécrit",
+  "activity.content.editBlock": "a modifié un bloc de",
   "activity.database.create": "a créé la base",
   "activity.database.update": "a modifié la base",
   "activity.empty": "Rien pour l'instant.",

@@ -51,6 +51,7 @@ export const AGENT_ACTIONS = [
   "page.restoreVersion",
   "content.replace",
   "content.append",
+  "content.editBlock",
   "file.upload",
   "database.create",
   "database.update",

@@ -89,6 +89,7 @@ Pages and database rows have content. It is read and written as **Markdown**, or
 | --- | --- |
 | `GET /api/pages/:id/content` | `{ "id", "title", "markdown", "content" }`. Includes what people are typing right now. |
 | `PUT /api/pages/:id/content` | Replaces the content: `{ "markdown": "…" }` or `{ "content": { "type": "doc", … } }`. The previous content stays in the page's history. |
+| `PATCH /api/pages/:id/blocks` | Changes one top-level block: `{ "match": "its current text", "markdown": "…" }` (or `content`). Only that block changes, so comments and live typing elsewhere stay. `409` `no_match`, or `ambiguous` with a `count`. |
 | `POST /api/pages/:id/content` | Adds at the end of the page, same body. |
 
 Changes show at once to people who have the page open.

@@ -249,6 +249,20 @@ export async function writeContent(collab: Collab, db: Db, pageId: string, doc: 
   await editContent(collab, db, pageId, (d) => setProsemirrorJSON(d, doc));
 }
 
+/**
+ * Swaps the top-level block at `index` for `nodes`. Nothing else in the page is touched, so comment anchors
+ * elsewhere and what people are typing in other blocks stay.
+ */
+export async function replaceBlock(collab: Collab, db: Db, pageId: string, index: number, nodes: ProseMirrorNode[]) {
+  await editContent(collab, db, pageId, (d) =>
+    d.transact(() => {
+      const fragment = d.getXmlFragment(CONTENT_FIELD);
+      fragment.delete(index, 1);
+      fillY(fragment, nodes, index);
+    }),
+  );
+}
+
 /** Adds blocks at the end of a page. */
 export async function appendContent(collab: Collab, db: Db, pageId: string, nodes: ProseMirrorNode[]) {
   await editContent(collab, db, pageId, (d) => d.transact(() => fillY(d.getXmlFragment(CONTENT_FIELD), nodes)));

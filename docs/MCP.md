@@ -57,7 +57,7 @@ Agents that only know OAuth connect as Claude does above.
 | `query_database` | Rows filtered and sorted, with their values by column name. |
 | `create_page` | A new page, with its content in Markdown. |
 | `capture_to_inbox` | Drops a quick note in your inbox, to file later. |
-| `append_to_page`, `replace_page_content` | Adds to a page, or rewrites it (the previous content stays in its history). |
+| `append_to_page`, `edit_block`, `replace_page_content` | Adds to a page, changes one block (comments and other people's typing stay), or rewrites it (the previous content stays in its history). |
 | `update_page`, `move_page`, `trash_page` | Renames, moves, or moves to the trash (from which you can restore it). |
 | `create_database` | A new database with the columns asked for. |
 | `add_database_row`, `update_database_row` | Adds a row (with its page content), or changes cells. |

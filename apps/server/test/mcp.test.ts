@@ -52,8 +52,9 @@ describe("MCP server", () => {
     const names = (await client.listTools()).tools.map((t) => t.name);
     expect(names).toEqual(expect.arrayContaining(["search", "list_spaces", "list_pages", "read_page", "list_databases", "get_database", "query_database"]));
     expect(names).not.toContain("create_page");
+    expect(names).not.toContain("edit_block");
     const full = await connect(await token([personal], false));
-    expect((await full.listTools()).tools.map((t) => t.name)).toEqual(expect.arrayContaining(["create_page", "append_to_page", "add_database_row"]));
+    expect((await full.listTools()).tools.map((t) => t.name)).toEqual(expect.arrayContaining(["create_page", "append_to_page", "edit_block", "add_database_row"]));
   });
 
   it("lists, creates, reads and writes pages within the token's spaces", async () => {
@@ -71,6 +72,9 @@ describe("MCP server", () => {
     expect(read.text).toContain("Penser au **fromage**.");
     expect((await call(client, "list_pages", { spaceId: personal })).json().map((p: { title: string }) => p.title)).toContain("Courses");
 
+    await call(client, "edit_block", { pageId: created.id, match: "Penser au fromage.", markdown: "Penser au **brie**." });
+    expect((await call(client, "read_page", { pageId: created.id })).text).toContain("Penser au **brie**.");
+    expect((await call(client, "edit_block", { pageId: created.id, match: "Absent", markdown: "x" })).error).toBe(true);
     await call(client, "replace_page_content", { pageId: created.id, markdown: "# Liste\nTout est acheté." });
     expect((await boris.get(`/api/pages/${created.id}/content`)).json().markdown).toBe("# Liste\n\nTout est acheté.");
 
@@ -78,7 +82,7 @@ describe("MCP server", () => {
     const versions = (await boris.get(`/api/pages/${created.id}/history`)).json().versions;
     expect(versions[0]).toMatchObject({ agent: "Claude", authors: [{ name: "Boris" }] });
     const activity = (await boris.get("/api/tokens/activity")).json().activity;
-    expect(activity.map((a: { action: string }) => a.action)).toEqual(["content.replace", "content.append", "page.create"]);
+    expect(activity.map((a: { action: string }) => a.action)).toEqual(["content.replace", "content.editBlock", "content.append", "page.create"]);
     expect(activity[0]).toMatchObject({ agent: "Claude", pageId: created.id, pageTitle: "Courses" });
   });
 
