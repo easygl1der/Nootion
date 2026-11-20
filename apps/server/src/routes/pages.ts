@@ -123,12 +123,13 @@ export const pageRoutes: FastifyPluginAsync = async (app) => {
     const { match } = parseBody(z.object({ match: z.string().min(1) }).passthrough(), req.body);
     const doc = contentInput(req.body, user.id)!;
     const flat = (s: string) => s.replace(/\s+/g, " ").trim();
+    const find = (blocks: ProseMirrorNode[]) => blocks.flatMap((n, i) => (flat(prosemirrorToText(n)) === flat(match) ? [i] : []));
     const before = readContent(app.collab, db, page.id);
-    const hits = (before.content ?? []).flatMap((n, i) => (flat(prosemirrorToText(n)) === flat(match) ? [i] : []));
-    if (hits.length !== 1)
-      return reply.status(409).send(hits.length ? { error: "ambiguous", message: `${hits.length} blocks have this text`, count: hits.length } : { error: "no_match", message: "No block has this text" });
+    const no = (n: number) => (n ? { error: "ambiguous", message: `${n} blocks have this text`, count: n } : { error: "no_match", message: "No block has this text" });
+    if (find(before.content ?? []).length !== 1) return reply.status(409).send(no(find(before.content ?? []).length));
     recordSnapshot(db, page.id, { content: before, force: true });
-    await replaceBlock(app.collab, db, page.id, hits[0]!, doc.content ?? []);
+    const hits = await replaceBlock(app.collab, db, page.id, find, doc.content ?? []);
+    if (hits.length !== 1) return reply.status(409).send(no(hits.length)); // changed under us between the read and the write: nothing written
     recordAgentVersion(db, page.id, readContent(app.collab, db, page.id), user.id);
     db.update(pages).set({ updatedAt: new Date() }).where(eq(pages.id, page.id)).run();
     return { ok: true, index: hits[0] };

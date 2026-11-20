@@ -250,17 +250,22 @@ export async function writeContent(collab: Collab, db: Db, pageId: string, doc: 
 }
 
 /**
- * Swaps the top-level block at `index` for `nodes`. Nothing else in the page is touched, so comment anchors
- * elsewhere and what people are typing in other blocks stay.
+ * Swaps the one top-level block that `find` picks (from the content as it is inside the transaction, so a block someone
+ * added above it meanwhile cannot shift it) for `nodes`. Nothing else in the page is touched, so comment anchors
+ * elsewhere and what people are typing in other blocks stay. Returns the index, or what `find` answered when it was not one.
  */
-export async function replaceBlock(collab: Collab, db: Db, pageId: string, index: number, nodes: ProseMirrorNode[]) {
+export async function replaceBlock(collab: Collab, db: Db, pageId: string, find: (blocks: ProseMirrorNode[]) => number[], nodes: ProseMirrorNode[]): Promise<number[]> {
+  let hits: number[] = [];
   await editContent(collab, db, pageId, (d) =>
     d.transact(() => {
+      hits = find(yDocToProsemirrorJSON(d).content ?? []);
+      if (hits.length !== 1) return;
       const fragment = d.getXmlFragment(CONTENT_FIELD);
-      fragment.delete(index, 1);
-      fillY(fragment, nodes, index);
+      fragment.delete(hits[0]!, 1);
+      fillY(fragment, nodes, hits[0]!);
     }),
   );
+  return hits;
 }
 
 /** Adds blocks at the end of a page. */
