@@ -49,7 +49,8 @@ export function listApiTokens(db: Db, userId: string): ApiToken[] {
 }
 
 /** Makes a token; the value returned is the only time it is seen. */
-export function createApiToken(db: Db, userId: string, input: CreateApiTokenInput): { token: string; apiToken: ApiToken } {
+/** `expiresAt` (wrise fork, DEM-1532) overrides `expiresInDays`, for the agent-token door's one-hour tokens. */
+export function createApiToken(db: Db, userId: string, input: CreateApiTokenInput, expiresAt?: Date): { token: string; apiToken: ApiToken } {
   const token = API_TOKEN_PREFIX + newToken();
   const row = db
     .insert(apiTokens)
@@ -61,7 +62,7 @@ export function createApiToken(db: Db, userId: string, input: CreateApiTokenInpu
       prefix: token.slice(0, API_TOKEN_PREFIX.length + 6),
       workspaceIds: [...new Set(input.workspaceIds)],
       readOnly: input.readOnly,
-      expiresAt: input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 86_400_000) : null,
+      expiresAt: expiresAt ?? (input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 86_400_000) : null),
     })
     .returning()
     .get();

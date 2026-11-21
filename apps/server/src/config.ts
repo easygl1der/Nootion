@@ -32,6 +32,11 @@ export interface Config {
    * app signs its user in without a password (`routes/desktop.ts`). Never set on a server.
    */
   desktop?: { token: string; userName: string } | null;
+  /**
+   * wrise fork (DEM-1532): the key of the agent-token door (NOOTION_AGENT_KEY, at least 32 characters; `routes/agent-tokens.ts`). The host that
+   * runs Claude for a person gets a short-lived token of that person's own account with it. Unset: the door does not exist.
+   */
+  agentKey?: string | null;
 }
 
 /** Proxies trusted by default: on the server itself or its private network (a public visitor can't pose as one). */
@@ -75,7 +80,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     contentSecurityPolicy: !/^(off|false|no|0)$/i.test(env.CONTENT_SECURITY_POLICY?.trim() ?? ""),
     notionApiUrl: (env.NOTION_API_URL ?? "https://api.notion.com").replace(/\/+$/, ""),
     desktop: desktopConfig(env),
+    agentKey: agentKeyConfig(env),
   };
+}
+
+function agentKeyConfig(env: NodeJS.ProcessEnv): string | null {
+  const key = env.NOOTION_AGENT_KEY?.trim();
+  if (!key) return null;
+  if (key.length < 32) throw new Error("NOOTION_AGENT_KEY must be at least 32 characters long.");
+  return key;
 }
 
 function desktopConfig(env: NodeJS.ProcessEnv): Config["desktop"] {
