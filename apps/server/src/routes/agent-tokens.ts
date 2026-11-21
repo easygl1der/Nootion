@@ -8,12 +8,13 @@ import { createApiToken, deleteApiToken } from "../api-tokens.js";
 
 /**
  * wrise fork (DEM-1532, Yihua 2026-11-21: Claude in a person's chat uses Notes as that person, reading and writing). The host that runs Claude
- * for a person (the DGX's chat-space broker) asks here, with the door's key, for a token of that person's own account: every space they belong
+ * for a person (the DGX's chat-space broker) asks here, with the door's key, for a token of that person's own account, found by the subject
+ * the company sign-in gave it (the portal's user id, `users.sso_subject`): every space they belong
  * to, their own roles there, at most an hour. What it changes shows in their own API-token activity under the token's name. Without the key,
  * or with no NOOTION_AGENT_KEY set, every path here is a plain 404. Never called by a browser.
  */
 const issueInput = z.object({
-  email: z.string().trim().min(3).max(320),
+  subject: z.string().regex(/^[A-Za-z0-9_.@-]{1,64}$/),
   name: z.string().trim().min(1).max(100),
   minutes: z.number().int().min(1).max(60),
 });
@@ -29,14 +30,14 @@ export const agentTokenRoutes: FastifyPluginAsync = async (app) => {
   app.addHook("onRequest", async (req) => {
     if (!allowed(req.headers["x-nootion-agent-key"])) throw notFound();
   });
-  const person = (email: string) => {
-    const user = db.select().from(users).where(eq(users.email, email.toLowerCase())).get();
+  const person = (subject: string) => {
+    const user = subject ? db.select().from(users).where(eq(users.ssoSubject, subject)).get() : undefined;
     return user && !user.disabled ? user : null;
   };
 
   app.post("/", async (req) => {
-    const { email, name, minutes } = parseBody(issueInput, req.body);
-    const user = person(email);
+    const { subject, name, minutes } = parseBody(issueInput, req.body);
+    const user = person(subject);
     if (!user) throw notFound();
     const workspaceIds = db.select({ id: workspaceMembers.workspaceId }).from(workspaceMembers).where(eq(workspaceMembers.userId, user.id)).all().map((r) => r.id);
     if (!workspaceIds.length) throw notFound();
@@ -44,8 +45,8 @@ export const agentTokenRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // The space is gone before its hour: its token goes too.
-  app.delete<{ Params: { id: string }; Querystring: { email?: string } }>("/:id", async (req) => {
-    const user = person(String(req.query.email ?? ""));
+  app.delete<{ Params: { id: string }; Querystring: { subject?: string } }>("/:id", async (req) => {
+    const user = person(String(req.query.subject ?? ""));
     if (!user || !deleteApiToken(db, user.id, req.params.id)) throw notFound();
     return { ok: true };
   });
