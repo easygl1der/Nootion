@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
+import { Database, FileText } from "lucide-react";
 import { customIconId, customIconUrl } from "@nootion/shared";
+
+/** The icon of a page without one of its own: a drawn glyph, never an emoji (DEM-2328). */
+export function PageGlyph({ kind, size = 15, className = "" }: { kind?: string; size?: number; className?: string }) {
+  const Icon = kind === "database" ? Database : FileText;
+  return <Icon size={size} aria-hidden className={`inline shrink-0 text-neutral-400 ${className}`} />;
+}
 
 /**
  * A page icon to show: the emoji, or the uploaded image, as big as the text around it. Null without an icon, so that

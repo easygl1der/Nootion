@@ -2,7 +2,7 @@ import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarPlus, Rss, Settings2, Trash2 } from "lucide-react";
+import { Calendar, CalendarPlus, Lock, Rss, Settings2, Trash2 } from "lucide-react";
 import {
   atLeast,
   calendarDateProp,
@@ -25,7 +25,7 @@ import { colorLabel, OPTION_CLASSES } from "./format";
 import { dbKey, useDatabaseList } from "./hooks";
 import { Popover } from "./Popover";
 import { copyText } from "../lib/browser";
-import { pageIcon } from "../lib/icons";
+import { PageGlyph, pageIcon } from "../lib/icons";
 
 export interface Loaded {
   source: CalendarSource;
@@ -140,13 +140,13 @@ export function CalendarBlockView({ node, updateAttributes, editor, extension }:
             );
           })}
           {hidden > 0 && (
-            <span className="text-neutral-400">🔒 {t("calendarBlock.hidden", { count: sources.length - loaded.length })}</span>
+            <span className="inline-flex items-center gap-1 text-neutral-400"><Lock size={13} aria-hidden /> {t("calendarBlock.hidden", { count: sources.length - loaded.length })}</span>
           )}
         </div>
       )}
       {sources.length === 0 ? (
         <div className="flex flex-col items-start gap-2 rounded border border-dashed border-neutral-300 px-3 py-4 text-sm text-neutral-500 dark:border-neutral-700">
-          <span>📅 {editable ? t("calendarBlock.empty") : t("calendarBlock.emptyReadOnly")}</span>
+          <span className="inline-flex items-center gap-1.5"><Calendar size={15} aria-hidden /> {editable ? t("calendarBlock.empty") : t("calendarBlock.emptyReadOnly")}</span>
           {editable && (
             <button
               className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
@@ -243,7 +243,7 @@ export function SourcesPanel({
                 </option>
               ))}
             </select>
-            <span className="min-w-0 flex-1 truncate">{data ? pageTitle(data.title) : "🔒"}</span>
+            <span className="min-w-0 flex-1 truncate">{data ? pageTitle(data.title) : <Lock size={13} aria-hidden />}</span>
             {dates.length > 0 && (
               <select
                 aria-label={t("calendarBlock.dateProperty")}
@@ -285,7 +285,7 @@ export function SourcesPanel({
           >
             <CalendarPlus size={14} className="shrink-0 text-neutral-400" />
             <span className="truncate">
-              {pageIcon(d.icon) ?? "🗃"} {pageTitle(d.title)}
+              {pageIcon(d.icon) ?? <PageGlyph kind="database" size={14} />} {pageTitle(d.title)}
             </span>
           </button>
         ))}

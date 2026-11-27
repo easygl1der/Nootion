@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronRight, GripVertical, Maximize2, Minimize2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Database, GripVertical, Maximize2, Minimize2, Plus, Trash2 } from "lucide-react";
 import {
   applyView,
   canGroupBy,
@@ -46,7 +46,7 @@ import { useSession } from "../lib/session";
 import { pageTitle } from "../lib/tree";
 import { CREATABLE_TYPES } from "@nootion/shared";
 import { usePluginPropertyTypes } from "../plugins/registry";
-import { pageIcon } from "../lib/icons";
+import { PageGlyph, pageIcon } from "../lib/icons";
 import { RowMenu } from "./RowMenu";
 import type { MenuAnchor } from "../components/PageMenu";
 
@@ -100,7 +100,7 @@ export function DatabaseViews(props: ViewProps) {
       {expanded && (
         // The way back sits on the title row, so it stays in sight on a phone where the tool row runs off the screen.
         <div className="mb-2 flex items-center gap-2">
-          <div className="min-w-0 flex-1 truncate text-lg font-semibold">🗃 {pageTitle(data.title)}</div>
+          <div className="min-w-0 flex-1 truncate text-lg font-semibold"><Database size={16} aria-hidden className="mr-1.5 inline text-neutral-400" />{pageTitle(data.title)}</div>
           <button
             onClick={() => setExpanded(false)}
             title={`${t("database.collapse")} (Esc)`}
@@ -826,7 +826,7 @@ function RelationSetup({ data, onCreate }: { data: DatabaseData; onCreate: (data
       <div className="max-h-64 overflow-y-auto">
         {databases.map((d) => (
           <button key={d.id} onClick={() => setPicked(d)} className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800">
-            <span className="w-4 text-center">{pageIcon(d.icon) ?? "🗃"}</span>
+            <span className="w-4 text-center">{pageIcon(d.icon) ?? <PageGlyph kind="database" size={14} />}</span>
             <span className="truncate">
               {pageTitle(d.title)}
               {d.id === data.id && <span className="text-neutral-400"> ({t("relation.thisDatabase")})</span>}

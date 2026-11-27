@@ -1,13 +1,13 @@
 import { useState, type DragEvent } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { ChevronRight, Database, FileText, MoreHorizontal, Plus } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { ChevronRight, Folder, MoreHorizontal, Plus } from "lucide-react";
 import type { PageSummary } from "@nootion/shared";
 import { api } from "../lib/api";
 import { useRefreshPages } from "../lib/queries";
 import { pageTitle, type TreeNode } from "../lib/tree";
 import { t } from "@nootion/shared";
 import { PageMenu, type MenuAnchor } from "./PageMenu";
-import { pageIcon } from "../lib/icons";
+import { PageGlyph, pageIcon } from "../lib/icons";
 import { Tip } from "./ui";
 
 export const DRAG_TYPE = "application/x-nootion-page";
@@ -23,14 +23,72 @@ interface TreeProps {
   all: PageSummary[];
 }
 
+/** Titles written "Group · Name" (the 20 "Payments · <insurer>" databases): five or more roots with one prefix fold under a folder (DEM-2328). */
+const GROUP_MIN = 5;
+const SEP = " · ";
+type Entry = { node: TreeNode; label?: string } | { group: string; items: { node: TreeNode; label: string }[] };
+export function groupRoots(nodes: TreeNode[]): Entry[] {
+  const prefix = (n: TreeNode) => (n.page.title.includes(SEP) ? n.page.title.split(SEP)[0]!.trim() : "");
+  const counts = new Map<string, number>();
+  for (const n of nodes) { const p = prefix(n); if (p) counts.set(p, (counts.get(p) ?? 0) + 1); }
+  const out: Entry[] = [];
+  const made = new Map<string, Extract<Entry, { group: string }>>();
+  for (const n of nodes) {
+    const p = prefix(n);
+    if (!p || (counts.get(p) ?? 0) < GROUP_MIN) { out.push({ node: n }); continue; }
+    let g = made.get(p);
+    if (!g) { g = { group: p, items: [] }; made.set(p, g); out.push(g); }
+    g.items.push({ node: n, label: n.page.title.slice(p.length + SEP.length).trim() || pageTitle(n.page.title) });
+  }
+  for (const g of made.values()) g.items.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
+  return out;
+}
+
 export function PageTree(props: TreeProps) {
   if (props.nodes.length === 0) return <p className="px-2 py-1 text-xs text-neutral-400">{t("tree.empty")}</p>;
   return (
     <ul>
-      {props.nodes.map((n) => (
-        <PageTreeItem key={n.page.id} node={n} depth={0} {...props} />
-      ))}
+      {groupRoots(props.nodes).map((e) =>
+        "group" in e ? (
+          <GroupFolder key={`g:${e.group}`} group={e} {...props} />
+        ) : (
+          <PageTreeItem key={e.node.page.id} node={e.node} depth={0} {...props} />
+        ),
+      )}
     </ul>
+  );
+}
+
+/** A folder made of titles, not a page: it only folds, and opens by itself when the open page is inside. */
+function GroupFolder({ group, ...props }: { group: Extract<Entry, { group: string }> } & TreeProps) {
+  const { pathname } = useLocation();
+  const inside = group.items.some((i) => pathname.endsWith(`/page/${i.node.page.id}`));
+  const [open, setOpen] = useState(false);
+  const shown = open || inside;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOpen(!shown)}
+        aria-expanded={shown}
+        data-group={group.group}
+        className="group flex h-7 w-full items-center gap-1 rounded-md pr-2 pl-1 text-left text-sm text-(color:--sidebar-foreground) outline-none hover:bg-(--sidebar-accent) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) touch:h-9"
+      >
+        <span className="flex size-6 shrink-0 items-center justify-center text-neutral-400">
+          <Folder size={15} aria-hidden className="group-hover:hidden touch:hidden" />
+          <ChevronRight size={14} aria-hidden className={`hidden transition-transform duration-150 group-hover:block touch:block motion-reduce:transition-none ${shown ? "rotate-90" : ""}`} />
+        </span>
+        <span className="truncate">{group.group}</span>
+        <span className="ml-auto text-xs text-neutral-400 tabular-nums">{group.items.length}</span>
+      </button>
+      {shown && (
+        <ul>
+          {group.items.map((i) => (
+            <PageTreeItem key={i.node.page.id} node={i.node} label={i.label} depth={1} {...props} />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }
 
@@ -44,7 +102,7 @@ function isInside(all: PageSummary[], pageId: string, ancestorId: string): boole
   return false;
 }
 
-function PageTreeItem({ node, depth, workspaceId, editable, all }: TreeProps & { node: TreeNode; depth: number }) {
+function PageTreeItem({ node, depth, label, workspaceId, editable, all }: TreeProps & { node: TreeNode; depth: number; label?: string }) {
   const [open, setOpen] = useState(false);
   const [drop, setDrop] = useState<DropZone | null>(null);
   const [menu, setMenu] = useState<MenuAnchor | null>(null);
@@ -96,6 +154,7 @@ function PageTreeItem({ node, depth, workspaceId, editable, all }: TreeProps & {
 
   const dropStyle =
     drop === "inside" ? "bg-blue-100 dark:bg-blue-950" : drop === "before" ? "shadow-[inset_0_2px_0_#3b82f6]" : drop === "after" ? "shadow-[inset_0_-2px_0_#3b82f6]" : "";
+  const glyph = pageIcon(page.icon) ?? <PageGlyph kind={page.kind} size={15} />;
 
   return (
     <li>
@@ -119,13 +178,20 @@ function PageTreeItem({ node, depth, workspaceId, editable, all }: TreeProps & {
           setMenu({ x: e.clientX, y: e.clientY });
         }}
       >
-        <button
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-neutral-400 touch:h-8 touch:w-8 hover:bg-neutral-200 dark:hover:bg-neutral-800"
-          onClick={() => setOpen(!open)}
-          aria-label={open ? t("tree.collapse") : t("tree.expand")}
-        >
-          <ChevronRight size={14} className={`transition ${open ? "rotate-90" : ""} ${children.length ? "" : "opacity-30"}`} />
-        </button>
+        {/* The icon slot: the page's icon; on hover (always on touch) a page with subpages shows its chevron instead, as Notion does. */}
+        {children.length > 0 ? (
+          <button
+            className="group/chev flex size-6 shrink-0 items-center justify-center rounded text-neutral-400 outline-none hover:bg-(--sidebar-selected) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) touch:size-8"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? t("tree.collapse") : t("tree.expand")}
+            aria-expanded={open}
+          >
+            <span className="flex group-hover:hidden group-focus-within:hidden touch:hidden">{glyph}</span>
+            <ChevronRight size={14} aria-hidden className={`hidden transition-transform duration-150 group-hover:block group-focus-within:block touch:block motion-reduce:transition-none ${open ? "rotate-90" : ""}`} />
+          </button>
+        ) : (
+          <span className="flex size-6 shrink-0 items-center justify-center touch:size-8">{glyph}</span>
+        )}
         {renaming ? (
           <input
             autoFocus
@@ -143,15 +209,13 @@ function PageTreeItem({ node, depth, workspaceId, editable, all }: TreeProps & {
         <NavLink
           to={`/page/${page.id}`}
           className={({ isActive }) =>
-            `flex min-w-0 flex-1 items-center gap-1.5 rounded px-1 py-1 text-sm touch:py-2 ${isActive ? "bg-neutral-200/80 font-medium dark:bg-neutral-800" : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60"}`
+            `flex min-w-0 flex-1 items-center rounded-md py-1 pr-1 pl-1 text-sm text-(color:--sidebar-foreground) touch:py-2 ${isActive ? "" : "hover:bg-(--sidebar-accent)"}`
           }
         >
-          <span className="w-4 shrink-0 text-center">{pageIcon(page.icon) ?? (page.kind === "database" ? <Database size={14} className="inline text-neutral-400" /> : <FileText size={14} className="inline text-neutral-400" />)}</span>
-          <span className="truncate">{pageTitle(page.title)}</span>
+          <span className="truncate">{label ?? pageTitle(page.title)}</span>
         </NavLink>
         )}
         <span className={`shrink-0 items-center gap-0.5 pl-0.5 group-hover:flex group-focus-within:flex touch:flex ${menu ? "flex" : "hidden"}`}>
-          {/* DEM-1512: the portal's row action (SidebarMenuAction + the DEM-1426 slide), wrise.css .wrise-row-action */}
           <Tip label={t("page.options")}>
             <button
               type="button"

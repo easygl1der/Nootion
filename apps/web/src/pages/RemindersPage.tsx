@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { AtSign, Bell, BellOff, Check, MessageSquare } from "lucide-react";
+import { PageGlyph } from "../lib/icons";
 import { intlLocale, t, type CommentNotification, type Reminder } from "@nootion/shared";
 import { commentNotificationsKey, useCommentNotifications } from "../comments/queries";
 import { api } from "../lib/api";
@@ -61,7 +62,7 @@ function CommentNotifications() {
                     })}</span>
                   <span className="block truncate text-neutral-600 dark:text-neutral-300">{n.excerpt}</span>
                   <span className="block truncate text-xs text-neutral-500">
-                    {n.pageIcon ?? "📄"} {pageTitle(n.pageTitle)} ·{" "}
+                    {n.pageIcon ?? <PageGlyph size={14} />} {pageTitle(n.pageTitle)} ·{" "}
                     {new Date(n.createdAt).toLocaleString(intlLocale(), { dateStyle: "medium", timeStyle: "short" })}
                   </span>
                 </span>
@@ -110,7 +111,7 @@ export function RemindersPage() {
                     <span className="block font-medium">{formatMentionDate(r.date)}</span>
                     {r.text && <span className="block truncate text-neutral-600 dark:text-neutral-300">{r.text}</span>}
                     <span className="block truncate text-xs text-neutral-500">
-                      {r.pageIcon ?? "📄"} {pageTitle(r.pageTitle)} ·{" "}
+                      {r.pageIcon ?? <PageGlyph size={14} />} {pageTitle(r.pageTitle)} ·{" "}
                       {t("reminders.at", { when: new Date(r.remindAt).toLocaleString(intlLocale(), { dateStyle: "medium", timeStyle: "short" }) })}
                     </span>
                   </Link>

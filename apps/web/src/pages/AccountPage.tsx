@@ -592,7 +592,7 @@ function DemoSection() {
           }
         }}
       >
-        ✨ {t("account.demoCreate")}
+        {t("account.demoCreate")}
       </Button>
     </Section>
   );

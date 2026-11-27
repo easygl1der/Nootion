@@ -2,7 +2,7 @@ import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink } from "lucide-react";
+import { Database, ExternalLink } from "lucide-react";
 import { atLeast, type DatabaseData } from "@nootion/shared";
 import { api } from "../lib/api";
 import { pageTitle } from "../lib/tree";
@@ -28,7 +28,7 @@ export function DatabaseBlockView({ node, extension }: NodeViewProps) {
 }
 
 function Heading({ title, to }: { title: string; to?: string }) {
-  const text = `🗃 ${pageTitle(title)}`;
+  const text = <><Database size={16} aria-hidden className="mr-1.5 inline text-neutral-400" />{pageTitle(title)}</>;
   if (!to) return <div className="mb-1 text-lg font-semibold">{text}</div>;
   // Readers get the same open-as-full-page button as editors (DEM-1447).
   return (
@@ -68,7 +68,7 @@ function EditableHeading({ data }: { data: DatabaseData }) {
   };
   return (
     <div className="mb-1 flex items-center gap-1 text-lg font-semibold">
-      <span>🗃</span>
+      <Database size={16} aria-hidden className="text-neutral-400" />
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}

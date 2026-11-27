@@ -14,16 +14,11 @@ import {
   LogOut,
   Plus,
   Settings,
-  Share2,
   Trash2,
-  Users,
   User,
   Download,
   Search,
-  Star,
   X,
-  Database,
-  FileText,
   Calendar,
   ChevronsUpDown,
   Home,
@@ -53,7 +48,6 @@ import { useSession } from "../lib/session";
 import { useUpdateStatus, useVersion } from "./UpdateNotice";
 import { buildTree, pageTitle } from "../lib/tree";
 import { DRAG_TYPE, PageTree } from "./PageTree";
-import { SlideIndicator } from "./SlideIndicator";
 import { Item } from "./PageMenu";
 import { Popover } from "../database/Popover";
 import { Button, CancelButton, ErrorText, Field, Modal, Tip } from "./ui";
@@ -63,28 +57,22 @@ import {
   QuickCaptureDialog,
   useCaptureShortcut,
 } from "./QuickCapture";
-import { MobileBar, SidebarLayout, useSidebarCollapsed } from "./SidebarLayout";
+import { MobileBar, MobileTabBar, SidebarLayout } from "./SidebarLayout";
 import { withBase } from "../lib/base";
 import { useIsTouch } from "../lib/mobile";
 import { clearOfflineData } from "../lib/offline";
 import { SyncStatus } from "./SyncStatus";
 import { useLiveEvents } from "../lib/live";
-import { pageIcon } from "../lib/icons";
+import { PageGlyph, pageIcon } from "../lib/icons";
 import { syncErrorText, useDesktopSync } from "../pages/SyncPage";
 import { useWriseMe, useWriseViewAs, writeAvatars, writeLogout, writeRole, writeSettings, writeViewAs, type WriseMe } from "../lib/wrise";
 
-// Official Wrise files (apps/web/public): the wordmark, and the mark when the sidebar is put away.
-// The Wrise rail's brand row (portal: sidebar-logo.tsx in SidebarHeader): the official logo, "v<version>" under it.
-function BrandImage({ version }: { version: string | null }) {
-  const collapsed = useSidebarCollapsed();
+// The brand row (DEM-2328): the official gold logomark and the app's name, nothing else; the version moved into the account menu.
+function BrandImage() {
   return (
-    <span className="flex flex-col items-start gap-1.5">
-      <img src={withBase(collapsed ? "/wrise-ai-icon.png" : "/wrise-ai-logo.png")} alt="Wrise AI" className="h-8 w-auto" />
-      {version && !collapsed && (
-        <span className="pl-0.5 text-[11px] leading-none text-(color:--sidebar-foreground)/60" title={t("admin.version", { version })} data-version>
-          v{version}
-        </span>
-      )}
+    <span className="flex items-center gap-2">
+      <img src={withBase("/wrise-logomark-gold.png")} alt="Wrise AI" className="wrise-mark" />
+      <span className="wrise-label text-[15px] font-semibold tracking-tight text-(color:--sidebar-accent-foreground)">Notes</span>
     </span>
   );
 }
@@ -98,7 +86,7 @@ function SearchBox({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label={t("search.button")}
       data-testid="search-or-ask"
-      className="mx-2 flex h-8 items-center gap-2 rounded-md bg-(--sidebar-accent) px-2 text-sm text-(color:--sidebar-foreground)/70 outline-none transition-colors duration-150 hover:text-(color:--sidebar-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none"
+      className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm text-(color:--sidebar-foreground)/80 outline-none transition-colors duration-150 hover:bg-(--sidebar-accent) hover:text-(color:--sidebar-accent-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none"
     >
       <Search className="size-4 shrink-0" aria-hidden />
       <span className="wrise-label truncate">{t("search.button")}</span>
@@ -118,8 +106,8 @@ const MENU_ITEM = "flex w-full cursor-default items-center gap-1.5 rounded-md px
 // DEM-1466 (Yihua 2026-11-15): the menu holds only what the portal's Settings row does not: the portal's view-as list, Notes settings
 // (Nootion's account page cut to what is Notes' own), Administration for its admin, Sync. Account / Notifications / Settings left (the Settings row
 // opens the portal's), Trash moved to the rail above Settings.
-function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncLinks, syncError }: {
-  wrise: WriseMe | null; onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
+function NavUserBlock({ wrise, version, onNewSpace, onLogout, admin, updateWarning, updateText, syncLinks, syncError }: {
+  wrise: WriseMe | null; version: string | null; onNewSpace: () => void; onLogout: () => void; admin: boolean; updateWarning: boolean; updateText: string; syncLinks: boolean; syncError: string | null | undefined;
 }) {
   const { user } = useSession();
   // how many of the faces failed to load: the next one is tried, then the initials (DEM-1445)
@@ -158,8 +146,8 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
   return (
     <>
       <button ref={btn} type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title={name} data-testid="nav-user"
-        className={`${RAIL_BTN} h-12 ${open ? "bg-(--sidebar-accent)" : ""}`}>
-        {face("size-8")}
+        className={`${RAIL_BTN} h-11 ${open ? "bg-(--sidebar-accent)" : ""}`}>
+        {face("size-7")}
         <span className="wrise-label grid min-w-0 flex-1 text-left leading-tight">
           <span className="truncate font-medium">{name}</span>
           <span className="truncate text-xs text-(color:--sidebar-foreground)/70">{role}</span>
@@ -190,6 +178,11 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
               <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
             </>
           )}
+          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/pages")}><Library size={16} /> {t("library.title")}</button>
+          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/graph")}><Waypoints size={16} /> {t("graph.title")}</button>
+          <button role="menuitem" className={MENU_ITEM} onClick={() => go("/trash")} data-testid="trash-row"><Trash2 size={16} /> {t("trash.title")}</button>
+          <button role="menuitem" className={MENU_ITEM} data-testid="settings-row" onClick={() => { if (wrise) { setOpen(false); writeSettings(); } else go("/account"); }}><Settings size={16} /> Settings</button>
+          <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
           <button role="menuitem" className={MENU_ITEM} onClick={() => go("/account")} data-testid="notes-settings">
             {wrise ? <><NotebookText size={16} /> Notes settings</> : <><User size={16} /> {t("account.title")}</>}
           </button>
@@ -205,8 +198,10 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
               {syncError && <span className="ml-auto text-amber-500" title={syncErrorText(syncError)} data-sync-warning><AlertTriangle size={14} aria-label={syncErrorText(syncError)} /></span>}
             </button>
           )}
+          <button role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); onNewSpace(); }} data-testid="new-space"><Plus size={16} /> {t("workspace.new")}</button>
           <div className="-mx-1 my-1 h-px bg-[#e6ebf2] dark:bg-white/10" />
           <button role="menuitem" className={MENU_ITEM} onClick={() => { setOpen(false); onLogout(); }}><LogOut size={16} /> {wrise ? "Log out" : t("auth.logout")}</button>
+          {version && <div className="px-1.5 pt-1 pb-0.5 text-[11px] text-[#94a3b8]" title={t("admin.version", { version })} data-version>v{version}</div>}
         </div>, document.body)}
     </>
   );
@@ -215,7 +210,7 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
 // The Wrise main frame's tab row, class for class (portal: components/dem378/sidebar/shell-tabs.tsx); colours are the sidebar tokens set on the aside in wrise.css.
 // The label opens and closes with the active state (grid 0fr to 1fr, 200 ms ease-out); Notes, this app, is the active tab.
 const TAB = "wrise-tab flex h-8 items-center rounded-md px-2 text-sm font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none";
-const TAB_ON = "bg-(--sidebar-accent) text-(color:--sidebar-accent-foreground)";
+const TAB_ON = "text-(color:--sidebar-accent-foreground)";
 const TAB_OFF = "text-(color:--sidebar-foreground)/70 hover:bg-(--sidebar-accent)/60";
 function TabLabel({ label, active }: { label: string; active: boolean }) {
   return (
@@ -249,25 +244,12 @@ function WiseTabs({ shown }: { shown?: string[] }) {
   );
 }
 
-// Nootion's own rows under the Wrise tabs, as Notion keeps them above the spaces (DEM-1446, Yihua 2026-11-14: "personal space 上面应该也是有一些东西"):
-// New page (in the Personal space), All pages, Graph, in the rail's style. Nootion's Home is the Notes tab.
-// Quick capture and Notifications are off the list (Yihua 2026-11-16, DEM-1512); ⌘⌥N and /reminders still work.
-function NootionNav({ onNewPage }: { onNewPage?: () => void }) {
-  const row = `${RAIL_BTN} relative h-8 text-(color:--sidebar-foreground)`;
+// New page, in the rail's style (DEM-2328: All pages, Graph, Trash and Settings moved into the account menu; Quick capture and Notifications left in DEM-1512).
+function NewPageRow({ onNewPage }: { onNewPage: () => void }) {
   return (
-    <div className="flex flex-col gap-0.5 px-2" data-testid="nootion-nav">
-      {onNewPage && (
-        <button type="button" onClick={onNewPage} className={row} data-testid="new-page">
-          <SquarePen aria-hidden /> {t("page.new")}
-        </button>
-      )}
-      <NavLink to="/pages" className={row}>
-        <Library aria-hidden /> {t("library.title")}
-      </NavLink>
-      <NavLink to="/graph" className={row}>
-        <Waypoints aria-hidden /> {t("graph.title")}
-      </NavLink>
-    </div>
+    <button type="button" onClick={onNewPage} className={`${RAIL_BTN} relative h-8 text-(color:--sidebar-foreground)`} data-testid="new-page">
+      <SquarePen aria-hidden /> {t("page.new")}
+    </button>
   );
 }
 
@@ -336,44 +318,27 @@ export function AppShell() {
 
   const sidebar = (
     <>
-      <div className="wrise-rail flex flex-col gap-2 p-2">
-        <Link to="/" className={`${RAIL_BTN} h-auto p-1.5!`} data-wrise-brand>
-          <BrandImage version={version} />
+      <div className="wrise-rail flex flex-col gap-0.5 px-2 pt-3 pb-1">
+        <Link to="/" className="wrise-brand mb-2 h-8 rounded-md px-2 outline-none focus-visible:ring-2 focus-visible:ring-(--sidebar-ring)" data-wrise-brand>
+          <BrandImage />
         </Link>
-        <SyncStatus className="mx-3 w-fit" />
         <SearchBox onClick={() => setSearching(true)} />
-        <WiseTabs shown={wrise?.tabs} />
-        <NootionNav onNewPage={personal ? newPage : undefined} />
+        {personal && <NewPageRow onNewPage={newPage} />}
+        <SyncStatus className="mx-2 w-fit" />
       </div>
-      <nav className="wrise-tree relative isolate flex-1 space-y-5 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
-        <SlideIndicator />
+      <nav className="wrise-tree relative isolate flex-1 space-y-4 px-2 py-2 md:overflow-y-auto" aria-label="Pages tree">
         <FavoritesSection />
         {workspaces.data?.map((ws) => (
           <WorkspaceSection key={ws.id} workspace={ws} />
         ))}
         <SharedSection />
-        <button type="button" onClick={() => setCreatingWorkspace(true)} className={`${RAIL_BTN} h-8 text-(color:--sidebar-foreground)/60`} data-testid="new-space">
-          <Plus aria-hidden /> {t("workspace.new")}
-        </button>
       </nav>
-      <div className="wrise-rail flex flex-col gap-0.5 p-2">
-        {/* Trash above Settings (DEM-1466): Notes' own, so a row of its own. */}
-        <NavLink to="/trash" className={`${RAIL_BTN} h-8`} data-testid="trash-row">
-          <Trash2 aria-hidden /> <span className="wrise-label">{t("trash.title")}</span>
-        </NavLink>
-        {/* One Settings: the portal's dialog when Notes runs inside it (DEM-1392), Nootion's account page otherwise. */}
-        {wrise ? (
-          <button type="button" onClick={() => writeSettings()} className={`${RAIL_BTN} h-8`} data-testid="settings-row">
-            <Settings aria-hidden /> <span className="wrise-label">Settings</span>
-          </button>
-        ) : (
-          <NavLink to="/account" className={`${RAIL_BTN} h-8`} data-testid="settings-row">
-            <Settings aria-hidden /> <span className="wrise-label">Settings</span>
-          </NavLink>
-        )}
-        <div className="h-1.5" aria-hidden />
+      <div className="wrise-rail flex flex-col gap-1 border-t border-neutral-200/80 p-2 dark:border-white/10">
+        <WiseTabs shown={wrise?.tabs} />
         <NavUserBlock
           wrise={wrise}
+          version={version}
+          onNewSpace={() => setCreatingWorkspace(true)}
           onLogout={logout}
           admin={user?.role === "admin"}
           updateWarning={updateWarning}
@@ -400,6 +365,7 @@ export function AppShell() {
         </MobileBar>
       )}
       <Outlet />
+      <MobileTabBar onSearch={() => setSearching(true)} onNewPage={personal ? newPage : undefined} />
       {creatingWorkspace && (
         <CreateWorkspaceDialog onClose={() => setCreatingWorkspace(false)} />
       )}
@@ -410,13 +376,11 @@ export function AppShell() {
 }
 
 function SectionHeader({
-  icon,
   label,
   children,
   open,
   onToggle,
 }: {
-  icon: React.ReactNode;
   label: string;
   children?: React.ReactNode;
   /** A space folds like a Notion section: the name opens and closes it (DEM-1446). */
@@ -425,14 +389,13 @@ function SectionHeader({
 }) {
   const name = (
     <>
-      {icon}
       <span className="truncate">{label}</span>
-      {onToggle && <ChevronRight size={12} aria-hidden className={`shrink-0 transition-transform duration-150 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} />}
+      {onToggle && <ChevronRight size={12} aria-hidden className={`shrink-0 opacity-0 transition-[opacity,transform] duration-150 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 motion-reduce:transition-none ${open ? "rotate-90" : ""}`} />}
     </>
   );
-  const nameClass = "flex min-w-0 items-center gap-1.5 text-xs font-medium text-neutral-500";
+  const nameClass = "flex min-w-0 items-center gap-1 text-xs font-medium text-neutral-500";
   return (
-    <div className="group mb-1 flex min-h-7 items-center justify-between border-b border-white/10 px-1 pb-1" data-space-header>
+    <div className="group flex min-h-7 items-center justify-between px-2" data-space-header>
       {onToggle ? (
         <button type="button" onClick={onToggle} aria-expanded={open} className={`${nameClass} rounded-sm outline-none hover:text-(color:--sidebar-accent-foreground) focus-visible:ring-2 focus-visible:ring-(--sidebar-ring)`} data-space-toggle>
           {name}
@@ -440,7 +403,7 @@ function SectionHeader({
       ) : (
         <span className={nameClass}>{name}</span>
       )}
-      <span className="flex items-center gap-0.5">{children}</span>
+      <span className="hidden items-center gap-0.5 group-hover:flex group-focus-within:flex touch:flex">{children}</span>
     </div>
   );
 }
@@ -479,13 +442,6 @@ function WorkspaceSection({ workspace }: { workspace: WorkspaceSummary }) {
   return (
     <div>
       <SectionHeader
-        icon={
-          workspace.kind === "personal" ? (
-            <User size={12} />
-          ) : (
-            <Users size={12} />
-          )
-        }
         label={workspaceName(workspace)}
         open={open}
         onToggle={toggle}
@@ -582,7 +538,7 @@ function FavoritesSection() {
 
   return (
     <div>
-      <SectionHeader icon={<Star size={12} />} label={t("favorites.title")} />
+      <SectionHeader label={t("favorites.title")} />
       {pages.map((page) => {
         const line =
           drop?.id === page.id
@@ -619,17 +575,10 @@ function FavoritesSection() {
             <NavLink
               to={`/page/${page.id}`}
               className={({ isActive }) =>
-                `flex min-w-0 flex-1 items-center gap-1.5 rounded py-1 pl-2 pr-1 text-sm touch:py-2 ${isActive ? "bg-neutral-200/80 font-medium dark:bg-neutral-800" : "hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60"}`
+                `flex min-w-0 flex-1 items-center gap-1.5 rounded-md py-1 pl-1 pr-1 text-sm text-(color:--sidebar-foreground) touch:py-2 ${isActive ? "" : "hover:bg-(--sidebar-accent)"}`
               }
             >
-              <span className="w-4 shrink-0 text-center">
-                {pageIcon(page.icon) ??
-                  (page.kind === "database" ? (
-                    <Database size={14} className="inline text-neutral-400" />
-                  ) : (
-                    <FileText size={14} className="inline text-neutral-400" />
-                  ))}
-              </span>
+              <span className="flex size-6 shrink-0 items-center justify-center">{pageIcon(page.icon) ?? <PageGlyph kind={page.kind} size={15} />}</span>
               <span className="truncate">{pageTitle(page.title)}</span>
             </NavLink>
             <Tip label={t("favorites.remove")}>
@@ -654,7 +603,7 @@ function SharedSection() {
   if (!shared.data?.length) return null;
   return (
     <div>
-      <SectionHeader icon={<Share2 size={12} />} label={t("sidebar.shared")} />
+      <SectionHeader label={t("sidebar.shared")} />
       <PageTree
         nodes={buildTree(shared.data)}
         all={shared.data}

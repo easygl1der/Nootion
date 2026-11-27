@@ -26,7 +26,7 @@ import { useSession } from "../lib/session";
 import { CommentsPanel, type DraftAnchor } from "../comments/CommentsPanel";
 import { useComments } from "../comments/queries";
 import { nextRunText, recurrenceText, RecurrenceDialog, useRecurrence } from "../components/RecurrenceDialog";
-import { pageIcon } from "../lib/icons";
+import { PageGlyph, pageIcon } from "../lib/icons";
 import { useBleed } from "../lib/bleed";
 
 /** A page, by the id in the address (or the one given, for the home page). */
@@ -139,37 +139,13 @@ function PageView({ page }: { page: PageDetail }) {
               <ChevronRight size={14} className="shrink-0" />
             </span>
           ))}
-          <span className="truncate px-1 text-neutral-800 dark:text-neutral-700">
+          <span className="truncate px-1 text-neutral-800 dark:text-neutral-700 max-md:max-w-[40vw]">
             {pageIcon(page.icon)} {pageTitle(title)}
           </span>
         </nav>
         <div className="flex shrink-0 items-center gap-1">
           <SyncStatus />
           <EditedAt pageId={page.id} updatedAt={page.updatedAt} />
-          {hasComments && (
-            <Button
-              variant="ghost"
-              onClick={() => setCommentsOpen((o) => !o)}
-              title={t("comments.title")}
-              aria-label={t("comments.title")}
-              aria-pressed={commentsOpen}
-              data-comments-toggle
-            >
-              <MessageSquare size={16} />
-              {openThreads > 0 && <span className="text-xs tabular-nums text-neutral-500">{openThreads}</span>}
-            </Button>
-          )}
-          {page.kind !== "database" && (
-            <Button variant="ghost" onClick={() => setHistory(true)} title={t("history.title")} aria-label={t("history.title")}>
-              <History size={16} />
-            </Button>
-          )}
-          {!page.home && <FavoriteButton page={page} />}
-          <Tip label={t("page.options")}>
-            <Button variant="ghost" onClick={(e) => setMenu(menu ? null : e.currentTarget)} aria-label={t("page.options")} aria-haspopup="menu" aria-expanded={!!menu}>
-              <MoreHorizontal size={16} />
-            </Button>
-          </Tip>
           {!canManage && (
             <span
               title={pageRoleLabel(page.role)}
@@ -185,6 +161,11 @@ function PageView({ page }: { page: PageDetail }) {
               </Button>
             </>
           )}
+          <Tip label={t("page.options")}>
+            <Button variant="ghost" onClick={(e) => setMenu(menu ? null : e.currentTarget)} aria-label={t("page.options")} aria-haspopup="menu" aria-expanded={!!menu}>
+              <MoreHorizontal size={16} />
+            </Button>
+          </Tip>
         </div>
       </header>
 
@@ -192,7 +173,7 @@ function PageView({ page }: { page: PageDetail }) {
       {/* A database page spans the page area, like Notion's (DEM-1447). */}
       <div
         ref={bleed}
-        className={`mx-auto px-5 pb-24 ${page.cover ? "pt-6" : "pt-8 sm:pt-16"} sm:px-12 ${page.fullWidth || page.kind === "database" ? "max-w-none sm:px-24" : "max-w-3xl"}`}
+        className={`mx-auto px-5 pb-24 ${page.cover ? "pt-6" : "pt-10 sm:pt-24"} sm:px-12 ${page.fullWidth || page.kind === "database" ? "max-w-none sm:px-24" : "max-w-3xl"}`}
       >
         <div className="flex flex-wrap items-end gap-1" data-title-block>
           {!page.home && <IconPicker icon={page.icon} editable={canEdit} onChange={(icon) => save({ icon })} />}
@@ -218,13 +199,13 @@ function PageView({ page }: { page: PageDetail }) {
             }}
             placeholder={page.template ? t("template.untitled") : t("common.untitled")}
             aria-label={t("page.titleLabel")}
-            className="w-full resize-none overflow-hidden bg-transparent text-3xl font-bold sm:text-4xl outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-600"
+            className="w-full resize-none overflow-hidden bg-transparent text-[2rem] leading-[1.15] font-bold tracking-[-0.02em] sm:text-[2.75rem] outline-none placeholder:text-neutral-300 dark:placeholder:text-neutral-600"
           />
         )}
         {page.template && <TemplateBanner page={page} canEdit={canEdit} />}
         {page.kind === "row" && page.parentId && <RowProperties databaseId={page.parentId} rowId={page.id} />}
         {offerTemplates && empty && <TemplatePicker page={page} />}
-        <div className="mt-4">
+        <div className="mt-6">
           {page.kind === "database" ? (
             <DatabaseTable id={page.id} />
           ) : (
@@ -261,6 +242,19 @@ function PageView({ page }: { page: PageDetail }) {
 
       {menu && (
         <Popover anchor={menu} onClose={() => setMenu(null)} width={240}>
+          {hasComments && (
+            <button type="button" onClick={() => { setMenu(null); setCommentsOpen((o) => !o); }} aria-pressed={commentsOpen} data-comments-toggle className={MENU_ROW}>
+              <MessageSquare size={15} /> {t("comments.title")}
+              {openThreads > 0 && <span className="ml-auto text-xs tabular-nums text-neutral-500">{openThreads}</span>}
+            </button>
+          )}
+          {page.kind !== "database" && (
+            <button type="button" onClick={() => { setMenu(null); setHistory(true); }} className={MENU_ROW}>
+              <History size={15} /> {t("history.title")}
+            </button>
+          )}
+          {!page.home && <FavoriteMenuItem page={page} onDone={() => setMenu(null)} />}
+          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
           {canEdit && (
             <label className="flex cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
               {t("page.fullWidth")}
@@ -331,22 +325,25 @@ function PageView({ page }: { page: PageDetail }) {
   );
 }
 
-function FavoriteButton({ page }: { page: PageDetail }) {
+const MENU_ROW = "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800";
+
+function FavoriteMenuItem({ page, onDone }: { page: PageDetail; onDone: () => void }) {
   const favorites = useFavorites();
   const qc = useQueryClient();
   const starred = !!favorites.data?.some((p) => p.id === page.id);
   const label = starred ? t("favorites.remove") : t("favorites.add");
 
   async function toggle() {
+    onDone();
     qc.setQueryData<PageSummary[]>(keys.favorites, (old = []) => (starred ? old.filter((p) => p.id !== page.id) : [...old, page]));
     await api(`/favorites/${page.id}`, { method: starred ? "DELETE" : "PUT" }).catch(() => {});
     await qc.invalidateQueries({ queryKey: keys.favorites });
   }
 
   return (
-    <Button variant="ghost" onClick={toggle} title={label} aria-label={label} aria-pressed={starred}>
-      <Star size={16} className={starred ? "fill-amber-400 text-amber-400" : ""} />
-    </Button>
+    <button type="button" onClick={toggle} aria-pressed={starred} className={MENU_ROW} data-favorite-toggle>
+      <Star size={15} className={starred ? "fill-amber-400 text-amber-400" : ""} /> {label}
+    </button>
   );
 }
 
@@ -433,7 +430,7 @@ function TemplatePicker({ page }: { page: PageDetail }) {
             onClick={() => apply(tpl.id)}
             className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
           >
-            <span>{pageIcon(tpl.icon) ?? "📄"}</span>
+            <span>{pageIcon(tpl.icon) ?? <PageGlyph size={15} />}</span>
             <span className="max-w-48 truncate">{applying === tpl.id ? t("template.applying") : pageTitle(tpl.title)}</span>
           </button>
         ))}

@@ -85,19 +85,20 @@ body {
 
 /* ---------- Page content (editor and public view) ---------- */
 .nootion-content {
-  @apply min-h-[40vh] text-[16px] leading-7 outline-none;
+  @apply min-h-[40vh] text-[16px] leading-[1.7] outline-none;
 }
 .nootion-content > * + * {
-  @apply mt-2;
+  @apply mt-3;
 }
+/* DEM-2328: a real hierarchy: size and weight both step (700 / 600 / 500), more room above a heading than below it */
 .nootion-content h1 {
-  @apply mt-8 text-3xl font-bold;
+  @apply mt-12 mb-1 text-[1.875rem] leading-9 font-bold tracking-[-0.015em];
 }
 .nootion-content h2 {
-  @apply mt-6 text-2xl font-semibold;
+  @apply mt-9 mb-0.5 text-[1.5rem] leading-8 font-semibold tracking-[-0.01em];
 }
 .nootion-content h3 {
-  @apply mt-4 text-xl font-semibold;
+  @apply mt-7 text-[1.125rem] leading-7 font-medium;
 }
 .nootion-content a:not(.page-link):not(.file-attachment):not(.home-widget a):not(.calendar-block a) {
   @apply cursor-pointer text-blue-600 underline decoration-blue-300 underline-offset-2 dark:text-blue-400;
@@ -194,7 +195,7 @@ body {
   }
 }
 .nootion-content blockquote {
-  @apply border-l-4 border-neutral-300 pl-4 text-neutral-600 dark:border-neutral-600 dark:text-neutral-300;
+  @apply border-l border-neutral-300 pl-4 text-neutral-600 dark:border-neutral-600 dark:text-neutral-300;
 }
 .nootion-content code {
   @apply rounded bg-neutral-100 px-1 py-0.5 font-mono text-[0.9em] text-rose-600 dark:bg-neutral-800 dark:text-rose-400;
@@ -222,14 +223,14 @@ body {
 }
 /* The emoji sits in the left margin; the blocks of the callout go one under the other. */
 .nootion-content .callout {
-  @apply relative rounded-lg bg-neutral-100 py-4 pr-4 pl-12 dark:bg-neutral-800;
+  @apply relative rounded-md border border-neutral-200 bg-neutral-50 py-3 pr-4 pl-11 dark:border-neutral-700 dark:bg-neutral-900;
 }
 .nootion-content .callout[data-emoji=""] {
   @apply pl-4;
 }
 .nootion-content .callout::before {
   content: attr(data-emoji);
-  @apply absolute top-4 left-4 text-xl leading-7;
+  @apply absolute top-3 left-4 text-lg leading-7;
 }
 .nootion-content .callout > :first-child {
   @apply mt-0;

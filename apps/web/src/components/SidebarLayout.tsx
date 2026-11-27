@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { PanelLeft } from "lucide-react";
+import { FileText, PanelLeft, Search, SquarePen } from "lucide-react";
 import { isMac } from "./QuickCapture";
 import { t } from "@nootion/shared";
 import { PORTAL_WIDTH, readPortalFolded, readPortalWidth, savePortalFolded, savePortalWidth } from "../lib/wrise";
@@ -235,6 +235,20 @@ export function MenuButton({ className = "" }: { className?: string }) {
     </button>
     <span className="mx-2 h-4 w-px shrink-0 bg-[#e6ebf2] dark:bg-white/15" aria-hidden />
     </>
+  );
+}
+
+/** Phones (DEM-2328): three actions at the thumb, the page list (the sidebar as a sheet), Search and New page. */
+export function MobileTabBar({ onSearch, onNewPage }: { onSearch: () => void; onNewPage?: () => void }) {
+  const ctx = useContext(SidebarContext);
+  if (!ctx) return null;
+  const item = "flex h-[52px] flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-[#475569] outline-none active:bg-[#eef3f9] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#f0b85a] dark:text-[#c7d5e3] dark:active:bg-[#16283b]";
+  return (
+    <nav aria-label="Notes" data-mobile-tabs className="fixed inset-x-0 bottom-0 z-30 flex border-t border-[#e6ebf2] bg-white pb-[env(safe-area-inset-bottom)] md:hidden dark:border-white/10 dark:bg-[#071528]">
+      <button type="button" onClick={ctx.open} className={item}><FileText size={18} aria-hidden />Pages</button>
+      <button type="button" onClick={onSearch} className={item}><Search size={18} aria-hidden />Search</button>
+      {onNewPage && <button type="button" onClick={onNewPage} className={item}><SquarePen size={18} aria-hidden />New page</button>}
+    </nav>
   );
 }
 
