@@ -161,3 +161,41 @@ aside[aria-label="Sidebar"] .wrise-row-action:focus-visible:not([aria-expanded="
   .wrise-tip { animation: none; }
   aside[aria-label="Sidebar"] .wrise-row-action::before { transition: none; }
 }
+
+/* ---- DEM-2328 (Yihua 2026-11-27: the Notes page is part of WRISE; only the middle differs) ----
+   The rail's numbers are the portal sidebar's (ui/sidebar.tsx, shell-tabs.tsx, global.css --sidebar-row-h 32px, --sidebar-row-gap 4px). */
+aside[aria-label="Sidebar"] { --sidebar-row-h: 2rem; --sidebar-row-gap: 0.25rem; --sidebar-border: rgba(255, 255, 255, 0.1); }
+@media (min-width: 768px) {
+  /* a hairline under the search and the tabs, and one above Trash / Settings, as the portal rail (shell-tabs.tsx border-b; SidebarSeparator) */
+  aside[aria-label="Sidebar"] .wrise-tabs { position: relative; padding-bottom: 8px; }
+  aside[aria-label="Sidebar"] .wrise-tabs::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 0; height: 1px; background: var(--sidebar-border); }
+  aside[aria-label="Sidebar"] .wrise-rail:has(> [data-testid="trash-row"]) { position: relative; padding-top: 12px; }
+  aside[aria-label="Sidebar"] .wrise-rail:has(> [data-testid="trash-row"])::before { content: ""; position: absolute; left: 16px; right: 16px; top: 0; height: 1px; background: var(--sidebar-border); }
+  aside[data-folded] .wrise-tabs::after { left: 0; right: 0; }
+  aside[data-folded] .wrise-rail:has(> [data-testid="trash-row"])::before { left: 8px; right: 8px; }
+}
+/* page rows: 32px high with the portal's 4px between rows (they were 28px, 0 apart); a space name is a 32px section label, no hairline under it */
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] li > div > a[href*="/page/"] { min-height: var(--sidebar-row-h); }
+aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] li + li { margin-top: var(--sidebar-row-gap); }
+aside[aria-label="Sidebar"] [data-space-header] { min-height: var(--sidebar-row-h); margin-bottom: var(--sidebar-row-gap); padding: 0 8px; border-color: transparent; }
+aside[aria-label="Sidebar"] [data-space-header] > button, aside[aria-label="Sidebar"] [data-space-header] > span:first-child { color: rgba(199, 213, 227, 0.7); }
+aside[aria-label="Sidebar"] .wrise-tree > :not(:last-child) { margin-block-end: 8px !important; }
+/* the top bar is the portal's (site-header.tsx): 48px, a hairline under it, 18px at the sides; its buttons are the portal's ghost button
+   (32px, rounded-lg, the hover colour slides in from the left and out to the right, DEM-1426) */
+@media (min-width: 768px) {
+  [data-wrise-header] { min-height: 48px; padding-inline: 18px; border-bottom: 1px solid #e6ebf2; }
+  .dark [data-wrise-header] { border-color: rgba(255, 255, 255, 0.1); }
+}
+[data-wrise-header] button:not([data-menu-button]):not([class*="bg-neutral-900"]) {
+  position: relative; isolation: isolate; height: 32px; min-width: 32px; padding: 0 10px; border-radius: 8px; background: transparent !important;
+  transition: color 100ms ease-out, scale 100ms ease-out;
+}
+[data-wrise-header] button:not([data-menu-button]):not([class*="bg-neutral-900"])::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: #eef3f9; transform: scaleX(0); transform-origin: right;
+  transition: transform 220ms cubic-bezier(.4, 0, .2, 1); pointer-events: none;
+}
+[data-wrise-header] button:not([data-menu-button]):not([class*="bg-neutral-900"]):hover::before,
+[data-wrise-header] button:not([data-menu-button]):not([class*="bg-neutral-900"])[aria-expanded="true"]::before { transform: scaleX(1); transform-origin: left; }
+[data-wrise-header] button:not([data-menu-button]):active { scale: 0.98; }
+[data-wrise-header] button:focus-visible { outline: 2px solid #f0b85a; outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { [data-wrise-header] button::before { transition: none !important; } }
