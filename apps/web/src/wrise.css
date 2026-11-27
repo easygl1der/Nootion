@@ -199,3 +199,16 @@ aside[aria-label="Sidebar"] .wrise-tree > :not(:last-child) { margin-block-end: 
 [data-wrise-header] button:not([data-menu-button]):active { scale: 0.98; }
 [data-wrise-header] button:focus-visible { outline: 2px solid #f0b85a; outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { [data-wrise-header] button::before { transition: none !important; } }
+
+/* ---- DEM-2328 round 2 (Yihua 2026-11-27): the portal's Stroke rail (DESIGN.md "Sidebar rail look: Stroke"): 13px rows, 16px icons at 1.5 line weight (70%), 11px section labels at 55% ---- */
+aside[aria-label="Sidebar"] { --sidebar-row-text: 0.8125rem; --sidebar-label-text: 0.6875rem; }
+aside[aria-label="Sidebar"] :is(a, button).text-sm, aside[aria-label="Sidebar"] nav[aria-label="Pages tree"] a { font-size: var(--sidebar-row-text); }
+aside[aria-label="Sidebar"] :is(a, button) > svg { width: 1rem; height: 1rem; stroke-width: 1.5; }
+aside[aria-label="Sidebar"] :is(a, button):not([aria-current="page"]) > svg { color: color-mix(in srgb, currentColor 70%, transparent); }
+aside[aria-label="Sidebar"] .wrise-tabs { flex-wrap: nowrap; overflow: hidden; }
+aside[aria-label="Sidebar"] [data-space-header] > button, aside[aria-label="Sidebar"] [data-space-header] > span:first-child { font-size: var(--sidebar-label-text); font-weight: 400; color: rgba(199, 213, 227, 0.55); }
+/* nothing in the rail or the page header wraps when the window is narrowed */
+aside[aria-label="Sidebar"] :is(a, button) { white-space: nowrap; }
+aside[aria-label="Sidebar"] :is(a, button) > :is(span, div) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+[data-wrise-header] { flex-wrap: nowrap; min-width: 0; }
+[data-wrise-header] > * { min-width: 0; }

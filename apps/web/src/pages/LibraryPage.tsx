@@ -78,19 +78,19 @@ export function LibraryPage() {
           <option value="title">{t("library.sortTitle")}</option>
         </Select>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800">
-        <table className="w-full text-sm" data-library>
-          <thead className="bg-neutral-50 text-left text-xs text-neutral-500 dark:bg-neutral-900">
+      <div className="overflow-x-auto rounded-2xl bg-[#f6f9fd] p-1 dark:bg-[#0b1c33]">
+        <table className="w-full border-separate border-spacing-x-0 border-spacing-y-1 text-sm" data-library>
+          <thead className="text-left text-xs text-[#64748b] dark:text-[#a7b8c8]">
             <tr>
-              <th className="w-[45%] px-3 py-2 font-medium">{t("library.name")}</th>
-              <th className="hidden px-3 py-2 font-medium md:table-cell">{t("library.where")}</th>
-              <th className="hidden px-3 py-2 font-medium sm:table-cell">{t("library.createdBy")}</th>
+              <th className="w-[45%] h-8 px-3 font-medium">{t("library.name")}</th>
+              <th className="hidden h-8 px-3 font-medium md:table-cell">{t("library.where")}</th>
+              <th className="hidden h-8 px-3 font-medium sm:table-cell">{t("library.createdBy")}</th>
               <th className="px-3 py-2 text-right font-medium whitespace-nowrap">{sort === "created" ? t("library.created") : t("library.updated")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+          <tbody className="[&_td]:h-11 [&_td]:bg-white [&_td]:transition-colors [&_td]:duration-100 [&_td:first-child]:rounded-l-[10px] [&_td:last-child]:rounded-r-[10px] [&_tr:hover>td]:bg-[#eef3f9] dark:[&_td]:bg-[#071528] dark:[&_tr:hover>td]:bg-[#16283b]">
             {shown.map((p) => (
-              <tr key={p.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-900/60">
+              <tr key={p.id}>
                 <td className="max-w-0 px-3 py-1.5">
                   <Link to={`/page/${p.id}`} className="flex min-w-0 items-center gap-2">
                     <span className="w-5 shrink-0 text-center">
