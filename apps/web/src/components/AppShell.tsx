@@ -213,10 +213,17 @@ function NavUserBlock({ wrise, onLogout, admin, updateWarning, updateText, syncL
 }
 
 // The Wrise main frame's tab row, class for class (portal: components/dem378/sidebar/shell-tabs.tsx); colours are the sidebar tokens set on the aside in wrise.css.
-// Icons only, never wrapping (the open tab is the highlighted gold icon); Notes, this app, is the active tab.
-const TAB = "wrise-tab flex h-8 min-w-8 shrink-0 items-center justify-center rounded-md px-2 text-sm font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none";
-const TAB_ON = "bg-(--sidebar-accent) text-(color:--sidebar-accent-foreground) [&>svg]:text-[#f0b85a]";
+// The label opens and closes with the active state (grid 0fr to 1fr, 200 ms ease-out); Notes, this app, is the active tab.
+const TAB = "wrise-tab flex h-8 shrink-0 items-center rounded-md px-2 text-sm font-medium transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-(--sidebar-ring) motion-reduce:transition-none";
+const TAB_ON = "bg-(--sidebar-accent) text-(color:--sidebar-accent-foreground)";
 const TAB_OFF = "text-(color:--sidebar-foreground)/70 hover:bg-(--sidebar-accent)/60";
+function TabLabel({ label, active }: { label: string; active: boolean }) {
+  return (
+    <span className={`wrise-label hidden @[15.5rem]/rail:grid transition-[grid-template-columns] duration-200 ease-out motion-reduce:transition-none ${active ? "grid-cols-[1fr]" : "grid-cols-[0fr]"}`}>
+      <span className="overflow-hidden whitespace-nowrap"><span className="pl-1.5">{label}</span></span>
+    </span>
+  );
+}
 const WISE_TABS = [
   { id: "home", label: "Home", icon: Home, href: "/" },
   { id: "chat", label: "Chat", icon: MessageCircle, href: "/chat" },
@@ -227,16 +234,20 @@ const WISE_TABS = [
 function WiseTabs({ shown }: { shown?: string[] }) {
   const tabs = shown ? WISE_TABS.filter((tab) => shown.includes(tab.id)) : WISE_TABS;
   return (
+    <div className="@container/rail">
     <nav aria-label="Pages" className="wrise-tabs flex flex-nowrap items-center gap-1 px-2" data-testid="wrise-tabs">
       {tabs.map(({ label, icon: Icon, href }) => (
         <a key={label} href={href} aria-label={label} title={label} data-testid={`tab-${label.toLowerCase()}`} data-no-base className={`${TAB} ${TAB_OFF}`}>
           <Icon className="size-4 shrink-0" aria-hidden />
+          <TabLabel label={label} active={false} />
         </a>
       ))}
       <NavLink to="/" end aria-label="Notes" title="Notes" data-testid="tab-notes" aria-current="page" className={`${TAB} ${TAB_ON}`}>
         <NotebookText className="size-4 shrink-0" aria-hidden />
+        <TabLabel label="Notes" active />
       </NavLink>
     </nav>
+    </div>
   );
 }
 
